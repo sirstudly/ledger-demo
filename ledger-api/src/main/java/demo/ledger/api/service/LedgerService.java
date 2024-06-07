@@ -3,12 +3,12 @@ package demo.ledger.api.service;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import demo.ledger.api.model.dto.CreateLedgerResponse;
-import demo.ledger.api.model.dto.EventType;
-import demo.ledger.api.model.dto.Ledger;
-import demo.ledger.api.model.dto.LedgerAccount;
+import demo.ledger.model.LedgerAccount;
 import demo.ledger.api.model.dto.RequestStatus;
 import demo.ledger.api.repository.LedgerAccountRepository;
 import demo.ledger.api.repository.LedgerRepository;
+import demo.ledger.model.Ledger;
+import demo.ledger.model.dto.EventType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -103,7 +103,7 @@ public class LedgerService {
 
     public Optional<Ledger> findLedgerByUuid( String uuid ) {
         // https://docs.spring.io/spring-data/jpa/reference/repositories/query-by-example.html
-        return ledgerRepository.findOne( Example.of( new Ledger().withUuid( uuid.toLowerCase() ) ) );
+        return ledgerRepository.findOne( Example.of( Ledger.builder().uuid( uuid.toLowerCase() ).build() ) );
     }
 
     public Optional<LedgerAccount> findLedgerAccountByUuid( String uuid ) {

@@ -1,4 +1,4 @@
-FROM maven:3.8.3-amazoncorretto-17
+FROM ledger-demo/ledger-common:latest
 
 # Set the working directory in the container
 WORKDIR /app

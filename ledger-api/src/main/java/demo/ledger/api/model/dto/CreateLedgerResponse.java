@@ -1,5 +1,7 @@
 package demo.ledger.api.model.dto;
 
+import demo.ledger.model.Ledger;
+
 public class CreateLedgerResponse extends RestResponse {
     private Ledger ledger;
 

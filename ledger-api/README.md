@@ -31,3 +31,5 @@ The Swagger API documentation will give the full description of all the API endp
 You can setup the Swagger documentation by running the following: ****TODO****
 
 
+## TODO:
+Use JWT for authentication/authorisation?

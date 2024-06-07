@@ -23,6 +23,12 @@ services:
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1 # this should match the number of brokers
 
+  ledger-common:
+    image: ledger-demo/ledger-common:latest
+    build:
+      context: ledger-common
+    container_name: ledger-common
+
   ledger-api:
     image: ledger-demo/ledger-api:latest
     build:
@@ -31,6 +37,7 @@ services:
     depends_on:
       - kafka
       - db
+      - ledger-common
     environment:
       - POSTGRES_USER=$YOUR_USERNAME
       - POSTGRES_PASSWORD=$YOUR_PASSWORD
@@ -51,6 +58,7 @@ services:
     depends_on:
       - kafka
       - db
+      - ledger-common
     environment:
       - POSTGRES_USER=$YOUR_USERNAME
       - POSTGRES_PASSWORD=$YOUR_PASSWORD

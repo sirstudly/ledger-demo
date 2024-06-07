@@ -1,17 +1,16 @@
 package demo.ledger.api.controller;
 
 import com.google.gson.Gson;
-import demo.ledger.api.model.dto.ApiOperation;
+import demo.ledger.api.config.KafkaTopicConfig;
 import demo.ledger.api.model.dto.CreateLedgerRequest;
 import demo.ledger.api.model.dto.CreateLedgerResponse;
-import demo.ledger.api.model.dto.EventType;
-import demo.ledger.api.model.dto.Ledger;
-import demo.ledger.api.model.dto.UuidLookup;
-import demo.ledger.api.model.dto.RequestStatus;
 import demo.ledger.api.model.dto.RestResponse;
-import demo.ledger.api.config.KafkaTopicConfig;
+import demo.ledger.api.model.dto.UuidLookup;
 import demo.ledger.api.model.exception.NotFoundException;
 import demo.ledger.api.service.LedgerService;
+import demo.ledger.model.Ledger;
+import demo.ledger.model.dto.ApiOperation;
+import demo.ledger.model.dto.EventType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;

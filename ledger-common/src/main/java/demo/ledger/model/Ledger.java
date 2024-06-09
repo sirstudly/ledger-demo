@@ -22,7 +22,7 @@ public class Ledger {
 
     @Id
     @GeneratedValue
-    private long id;
+    private Long id;
 
     @Column( name = "uuid", nullable = false )
     private String uuid;

@@ -49,47 +49,37 @@ public class LedgerEventConsumer {
                                         @Header( KafkaHeaders.RECEIVED_TIMESTAMP ) long ts ) {
         OffsetDateTime timestamp = OffsetDateTime.of( LocalDateTime.ofEpochSecond( ts / 1000, 0, ZoneOffset.UTC ), ZoneOffset.UTC );
         LOGGER.info( "Received topic={}, message=[{}], offset={}, timestamp={}", topic, in, offset, timestamp );
-        JsonObject obj = gson.fromJson( in, JsonObject.class );
-        if ( obj.has( "eventType" ) ) {
+        try {
+            JsonObject obj = gson.fromJson( in, JsonObject.class );
             if ( EventType.CREATE_LEDGER.name().equals( obj.get( "eventType" ).getAsString() ) ) {
                 JsonObject req = obj.get( "data" ).getAsJsonObject();
-                // FIXME: deserialise to DTOs from common package
-                try {
-                    Ledger ledger = ledgerService.createLedger(
-                            req.get( "uuid" ).getAsString(),
-                            req.get( "name" ).getAsString(),
-                            req.get( "description" ).getAsString() );
+                Ledger ledger = gson.fromJson( gson.toJson( req ), Ledger.class );
+                ledger = ledgerService.createLedger(
+                        ledger.getUuid(),
+                        ledger.getName(),
+                        ledger.getDescription() );
 
-                    sendMessage( LEDGER_EVENTS_TOPIC, gson.toJson(
-                            new ApiOperation<Ledger>()
-                                    .withEventType( EventType.LEDGER_CREATED )
-                                    .withData( ledger ) ) );
-                }
-                catch ( Exception ex ) {
-                    LOGGER.error( "Failed to process offset=" + offset, ex );
-                    sendMessage( FAILED_PROCESSING_TOPIC, gson.toJson( FailedProcessingEvent.builder()
-                            .topic( topic )
-                            .partition( partition )
-                            .offset( offset )
-                            .input( in )
-                            .timestamp( timestamp )
-                            .error( ex.getMessage() )
-                            .stacktrace( ExceptionUtils.getStackTrace( ex ) )
-                            .build() )
-                    );
-                }
+                sendMessage( LEDGER_EVENTS_TOPIC, gson.toJson(
+                        new ApiOperation<Ledger>()
+                                .withEventType( EventType.LEDGER_CREATED )
+                                .withData( ledger ) ) );
+            }
+            else {
+                LOGGER.warn( "Unsupported event type: {}", obj.get( "eventType" ).getAsString() );
             }
         }
-        else {
+        catch ( Exception ex ) {
+            LOGGER.error( "Failed to process offset=" + offset, ex );
             sendMessage( FAILED_PROCESSING_TOPIC, gson.toJson( FailedProcessingEvent.builder()
                     .topic( topic )
                     .partition( partition )
                     .offset( offset )
                     .input( in )
                     .timestamp( timestamp )
-                    .error( "Missing event type" )
-                    .build() ) );
-            LOGGER.warn( "Missing eventType on event offset={}", offset );
+                    .error( ex.getMessage() )
+                    .stacktrace( ExceptionUtils.getStackTrace( ex ) )
+                    .build() )
+            );
         }
     }
 

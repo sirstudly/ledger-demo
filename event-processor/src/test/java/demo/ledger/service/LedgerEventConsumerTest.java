@@ -35,7 +35,7 @@ import static org.mockito.Mockito.when;
 public class LedgerEventConsumerTest {
 
     @TestConfiguration
-    static class EmployeeServiceImplTestContextConfiguration {
+    static class TestContextConfiguration {
         @Bean
         public LedgerEventConsumer getLedgerEventConsumer( LedgerService ledgerService, Gson gson, KafkaTemplate<String, String> kafkaTemplate ) {
             return new LedgerEventConsumer( ledgerService, gson, kafkaTemplate );

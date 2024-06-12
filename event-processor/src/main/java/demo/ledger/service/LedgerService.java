@@ -27,7 +27,7 @@ public class LedgerService {
     public Ledger createLedger( String uuid, String name, String description ) {
         LOGGER.info( "Creating ledger: uuid={}, name={}, description={}", uuid, name, description );
         Ledger obj = ledgerRepository.save( Ledger.builder()
-                .uuid( uuid.toLowerCase() )
+                .uuid( uuid )
                 .name( name )
                 .description( description )
                 .createdDate( OffsetDateTime.now() )
@@ -38,14 +38,14 @@ public class LedgerService {
     }
 
     public Optional<Ledger> getLedger( String uuid ) {
-        return ledgerRepository.findOne( Example.of( Ledger.builder().uuid( uuid.toLowerCase() ).build() ) );
+        return ledgerRepository.findOne( Example.of( Ledger.builder().uuid( uuid ).build() ) );
     }
 
     public LedgerAccount createLedgerAccount( Ledger ledger, String uuid, String name, String description, String currency ) {
         LOGGER.info( "Creating ledger account: ledgerId={}, uuid={}, name={}, description={}", ledger.getId(), uuid, name, description, currency );
 
         LedgerAccount obj = ledgerAccountRepository.save( LedgerAccount.builder()
-                .uuid( uuid.toLowerCase() )
+                .uuid( uuid )
                 .ledger( ledger )
                 .name( name )
                 .description( description )
@@ -58,6 +58,6 @@ public class LedgerService {
     }
 
     public Optional<LedgerAccount> getLedgerAccount( String uuid ) {
-        return ledgerAccountRepository.findOne( Example.of( LedgerAccount.builder().uuid( uuid.toLowerCase() ).build() ) );
+        return ledgerAccountRepository.findOne( Example.of( LedgerAccount.builder().uuid( uuid ).build() ) );
     }
 }

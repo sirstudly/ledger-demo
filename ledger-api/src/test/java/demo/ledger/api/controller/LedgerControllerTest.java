@@ -153,7 +153,7 @@ public class LedgerControllerTest {
                 .andExpect( MockMvcResultMatchers.jsonPath( "$.status", is( RequestStatus.failed.name() ) ) )
                 .andExpect( MockMvcResultMatchers.jsonPath( "$.error" ).doesNotExist() )
                 .andExpect( MockMvcResultMatchers.jsonPath( "$.errors").exists() )
-                .andExpect( MockMvcResultMatchers.jsonPath( "$.errors.uuid", is( "Invalid UUID" ) ) )
+                .andExpect( MockMvcResultMatchers.jsonPath( "$.errors.uuid", is( "Invalid UUID (only lowercase characters allowed)" ) ) )
                 .andExpect( MockMvcResultMatchers.jsonPath( "$.ledger" ).doesNotExist() );
 
         verify( ledgerService, never() ).waitForLedgerCreation( anyString(), anyLong() );
@@ -242,6 +242,6 @@ public class LedgerControllerTest {
                 .andExpect( status().isBadRequest() )
                 .andExpect( MockMvcResultMatchers.jsonPath( "$.status", is( RequestStatus.failed.name() ) ) )
                 .andExpect( MockMvcResultMatchers.jsonPath( "$.errors").exists() )
-                .andExpect( MockMvcResultMatchers.jsonPath( "$.errors.uuid", is( "Invalid UUID" ) ) );
+                .andExpect( MockMvcResultMatchers.jsonPath( "$.errors.uuid", is( "Invalid UUID (only lowercase characters allowed)" ) ) );
     }
 }

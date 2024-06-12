@@ -163,10 +163,10 @@ public class LedgerService {
 
     public Optional<Ledger> findLedgerByUuid( String uuid ) {
         // https://docs.spring.io/spring-data/jpa/reference/repositories/query-by-example.html
-        return ledgerRepository.findOne( Example.of( Ledger.builder().uuid( uuid.toLowerCase() ).build() ) );
+        return ledgerRepository.findOne( Example.of( Ledger.builder().uuid( uuid ).build() ) );
     }
 
     public Optional<LedgerAccount> findLedgerAccountByUuid( String uuid ) {
-        return ledgerAccountRepository.findOne( Example.of( LedgerAccount.builder().uuid( uuid.toLowerCase() ).build() ) );
+        return ledgerAccountRepository.findOne( Example.of( LedgerAccount.builder().uuid( uuid ).build() ) );
     }
 }

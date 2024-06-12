@@ -60,7 +60,7 @@ public class LedgerEventConsumer {
                 Ledger ledger = gson.fromJson( gson.toJson( req ), Ledger.class );
 
                 // first check that another ledger doesn't already exist with the same UUID
-                if ( ledgerService.getLedger( ledger.getUuid().toLowerCase() ).isPresent() ) {
+                if ( ledgerService.getLedger( ledger.getUuid() ).isPresent() ) {
                     throw new DuplicateKeyException( EventType.LEDGER_CREATION_FAILED, ledger.getUuid(), "Ledger already exists with this UUID" );
                 }
 

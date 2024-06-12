@@ -7,6 +7,7 @@ import demo.ledger.api.model.exception.ValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -58,6 +59,12 @@ public abstract class BaseController {
     @ExceptionHandler( ValidationException.class )
     public RestResponse handleValidationException( ValidationException ex ) {
         return new RestResponse( RequestStatus.failed ).withError( ex.getMessage() );
+    }
+
+    @ResponseStatus( HttpStatus.BAD_REQUEST )
+    @ExceptionHandler( HttpMessageNotReadableException.class )
+    public RestResponse handleHttpMessageNotReadableException( HttpMessageNotReadableException ex ) {
+        return new RestResponse( RequestStatus.failed ).withError( "Request unreadable" );
     }
 
     protected void sendMessage( String key, String payload ) {

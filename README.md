@@ -42,7 +42,8 @@ PostgreSQL is currently used as the datastore.
 ## Build and Deployment
 
 Run ```docker-compose up --build``` in this directory to build and run the following docker containers:
-- ledger-api: The RESTful server implemented as a Spring Boot webapp. It can be accessed on port 6868. API endpoints are published in Swagger (TODO).
+- ledger-common: build common Java package for use in ledger-api and event-processor
+- ledger-api: The RESTful server implemented as a Spring Boot webapp. It can be accessed on port 6868. API endpoints are published in Swagger on http://localhost:6868/swagger-ui/index.html
 - event-processor: Handles all updates to the datastore.
 - Apache Kafka: Our event streaming platform. It can be accessed on port 29092.
 - Apache ZooKeeper: The distribution and coordination server used by Kafka. It can be accessed on port 2181.

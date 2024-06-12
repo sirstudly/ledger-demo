@@ -28,7 +28,10 @@ The following application handles the REST API for the Bank Ledger Demo.
 ## Build Instructions and API Documentation
 
 The Swagger API documentation will give the full description of all the API endpoints.
-You can setup the Swagger documentation by running the following: ****TODO****
+It can be accessed at the following address: ``http://<server>:<port>/swagger-ui/index.html``
+
+## References
+* https://www.baeldung.com/spring-rest-openapi-documentation
 
 
 ## TODO:

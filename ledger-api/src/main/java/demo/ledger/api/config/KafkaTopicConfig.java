@@ -23,9 +23,6 @@ public class KafkaTopicConfig {
     @Value( value = "${spring.kafka.bootstrap.servers}" )
     private String bootstrapAddress;
 
-//    @Value( value = "${spring.kafka.topic.default}" )
-//    private String defaultTopic;
-
     @Bean
     public KafkaAdmin kafkaAdmin() {
         Map<String, Object> configs = new HashMap<>();

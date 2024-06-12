@@ -9,7 +9,7 @@ RUN mvn dependency:resolve
 # Copy the source files
 COPY src ./src
 # Build the application using Maven
-RUN mvn clean package -DskipTests
+RUN mvn clean package
 
 # Run the packaged JAR file
 WORKDIR /app/target

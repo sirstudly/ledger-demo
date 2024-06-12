@@ -5,7 +5,15 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+@Builder
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class CreateLedgerAccountRequest {
 
     @NotBlank
@@ -14,12 +22,17 @@ public class CreateLedgerAccountRequest {
     private String uuid;
 
     @NotBlank
-    @Size(max = 1000)
-    @Schema( description = "The name of this ledger")
+    @ValidUUID
+    @Schema( description = "The UUID of the ledger this account belongs to" )
+    private String ledgerUuid;
+
+    @NotBlank
+    @Size( max = 1000 )
+    @Schema( description = "The name of this ledger" )
     private String name;
 
-    @Size(max = 1000)
-    @Schema( description = "A short description of this ledger")
+    @Size( max = 1000 )
+    @Schema( description = "A short description of this ledger" )
     private String description;
 
     @NotBlank
@@ -27,48 +40,4 @@ public class CreateLedgerAccountRequest {
     @Schema( description = "The ISO 4217 three-letter currency code for this account" )
     private String currency;
 
-    @NotBlank
-    @ValidUUID
-    @Schema( description = "The UUID of the ledger this account belongs to")
-    private String ledgerUuid;
-
-    public String getUuid() {
-        return uuid;
-    }
-
-    public void setUuid( String uuid ) {
-        this.uuid = uuid;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName( String name ) {
-        this.name = name;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription( String description ) {
-        this.description = description;
-    }
-
-    public String getCurrency() {
-        return currency;
-    }
-
-    public void setCurrency( String currency ) {
-        this.currency = currency;
-    }
-
-    public String getLedgerUuid() {
-        return ledgerUuid;
-    }
-
-    public void setLedgerUuid( String ledgerUuid ) {
-        this.ledgerUuid = ledgerUuid;
-    }
 }

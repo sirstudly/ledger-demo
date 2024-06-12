@@ -27,6 +27,7 @@ The system is split into two smaller microservices:
   - consumes all "update" Kafka events
   - updates datastore
   - create Kafka completion events
+  - create Kafka failure events (AKA "dead-letter" queue for manual processing)
 
 Apache Kafka will be used as the event streaming platform to pass information between the two applications.
 PostgreSQL is currently used as the datastore.

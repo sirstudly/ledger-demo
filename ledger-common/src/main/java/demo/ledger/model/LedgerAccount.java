@@ -1,92 +1,58 @@
 package demo.ledger.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.time.OffsetDateTime;
 
 @Entity
 @Table( name = "ledger_account" )
+@JsonIgnoreProperties( {"hibernateLazyInitializer", "handler"} )
+@Builder
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class LedgerAccount {
 
     @Id
     @GeneratedValue
     private Long id;
+
     @Column( name = "uuid", nullable = false, unique = true )
     private String uuid;
-    @Column( name = "name", nullable = false )
-    private String name;
-    @Column( name = "description" )
-    private String description;
-    @Column( name = "currency", nullable = false )
-    private String currency;
-    @Column( name = "ledgerUuid", nullable = false )
+
+    @ManyToOne( fetch = FetchType.LAZY )
+    @JoinColumn( name = "ledger_id", nullable = false, referencedColumnName = "id" )
+    private Ledger ledger;
+
+    // only required when deserializing the initial "create" event
+    // this is the same as ledger.uuid
     private String ledgerUuid;
 
-    public LedgerAccount( Long id, String uuid, String name, String description, String currency, String ledgerUuid ) {
-        this.uuid = uuid;
-        this.name = name;
-        this.description = description;
-        this.id = id;
-        this.currency = currency;
-        this.ledgerUuid = ledgerUuid;
-    }
+    @Column( name = "name", nullable = false )
+    private String name;
 
-    public LedgerAccount() {
-        // empty constructor
-    }
+    @Column( name = "description" )
+    private String description;
 
-    public Long getId() {
-        return id;
-    }
+    @Column( name = "currency", nullable = false )
+    private String currency;
 
-    public void setId( Long id ) {
-        this.id = id;
-    }
+    @Column( name = "created_date" )
+    private OffsetDateTime createdDate;
 
-    public String getUuid() {
-        return uuid;
-    }
+    @Column( name = "last_updated_date" )
+    private OffsetDateTime lastUpdatedDate;
 
-    public void setUuid( String uuid ) {
-        this.uuid = uuid;
-    }
-
-    public LedgerAccount withUuid( String uuid ) {
-        this.uuid = uuid;
-        return this;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName( String name ) {
-        this.name = name;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription( String description ) {
-        this.description = description;
-    }
-
-    public String getCurrency() {
-        return currency;
-    }
-
-    public void setCurrency( String currency ) {
-        this.currency = currency;
-    }
-
-    public String getLedgerUuid() {
-        return ledgerUuid;
-    }
-
-    public void setLedgerUuid( String ledgerUuid ) {
-        this.ledgerUuid = ledgerUuid;
-    }
 }

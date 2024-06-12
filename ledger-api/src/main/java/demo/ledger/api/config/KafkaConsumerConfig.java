@@ -1,7 +1,5 @@
 package demo.ledger.api.config;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,7 +10,6 @@ import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 
-import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -33,14 +30,6 @@ public class KafkaConsumerConfig {
         config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest"); // new consumer groups start from the first offset
         return new DefaultKafkaConsumerFactory<>(config);
     }
-
-//    @Bean
-//    public ConcurrentKafkaListenerContainerFactory<String, String> filterKafkaListenerContainerFactory() {
-//        ConcurrentKafkaListenerContainerFactory<String, String> factory = new ConcurrentKafkaListenerContainerFactory<>();
-//        factory.setConsumerFactory( consumerFactory() );
-//        factory.setRecordFilterStrategy( record -> record.value().contains( "World" ) );
-//        return factory;
-//    }
 
     @Bean
     public ConcurrentKafkaListenerContainerFactory<String, String> kafkaListenerContainerFactory() {

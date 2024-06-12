@@ -4,8 +4,12 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import demo.ledger.model.FailedProcessingEvent;
 import demo.ledger.model.Ledger;
+import demo.ledger.model.LedgerAccount;
 import demo.ledger.model.dto.ApiOperation;
 import demo.ledger.model.dto.EventType;
+import demo.ledger.model.dto.FailedResponse;
+import demo.ledger.model.exception.DuplicateKeyException;
+import demo.ledger.model.exception.NotFoundException;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,6 +58,12 @@ public class LedgerEventConsumer {
             if ( EventType.CREATE_LEDGER.name().equals( obj.get( "eventType" ).getAsString() ) ) {
                 JsonObject req = obj.get( "data" ).getAsJsonObject();
                 Ledger ledger = gson.fromJson( gson.toJson( req ), Ledger.class );
+
+                // first check that another ledger doesn't already exist with the same UUID
+                if ( ledgerService.getLedger( ledger.getUuid().toLowerCase() ).isPresent() ) {
+                    throw new DuplicateKeyException( EventType.LEDGER_CREATION_FAILED, ledger.getUuid(), "Ledger already exists with this UUID" );
+                }
+
                 ledger = ledgerService.createLedger(
                         ledger.getUuid(),
                         ledger.getName(),
@@ -64,9 +74,41 @@ public class LedgerEventConsumer {
                                 .withEventType( EventType.LEDGER_CREATED )
                                 .withData( ledger ) ) );
             }
+            else if ( EventType.CREATE_LEDGER_ACCOUNT.name().equals( obj.get( "eventType" ).getAsString() ) ) {
+                JsonObject req = obj.get( "data" ).getAsJsonObject();
+                LedgerAccount ledgerAccount = gson.fromJson( gson.toJson( req ), LedgerAccount.class );
+                final String ledgerAccountUuid = ledgerAccount.getUuid();
+
+                Ledger parentLedger = ledgerService.getLedger( ledgerAccount.getLedgerUuid() )
+                        .orElseThrow( () -> new NotFoundException( EventType.LEDGER_ACCOUNT_CREATION_FAILED, ledgerAccountUuid, "No matching ledger found." ) );
+
+                ledgerAccount = ledgerService.createLedgerAccount(
+                        parentLedger,
+                        ledgerAccount.getUuid(),
+                        ledgerAccount.getName(),
+                        ledgerAccount.getDescription(),
+                        ledgerAccount.getCurrency() );
+
+                sendMessage( LEDGER_EVENTS_TOPIC, gson.toJson(
+                        new ApiOperation<LedgerAccount>()
+                                .withEventType( EventType.LEDGER_ACCOUNT_CREATED )
+                                .withData( ledgerAccount ) ) );
+            }
             else {
                 LOGGER.warn( "Unsupported event type: {}", obj.get( "eventType" ).getAsString() );
             }
+        }
+        catch ( DuplicateKeyException ex ) {
+            sendMessage( LEDGER_EVENTS_TOPIC, gson.toJson(
+                    new ApiOperation<FailedResponse>()
+                            .withEventType( ex.getEventType() )
+                            .withData( new FailedResponse( ex.getUuid(), ex.getMessage() ) ) ) );
+        }
+        catch ( NotFoundException ex ) {
+            sendMessage( LEDGER_EVENTS_TOPIC, gson.toJson(
+                    new ApiOperation<FailedResponse>()
+                            .withEventType( ex.getEventType() )
+                            .withData( new FailedResponse( ex.getUuid(), ex.getMessage() ) ) ) );
         }
         catch ( Exception ex ) {
             LOGGER.error( "Failed to process offset=" + offset, ex );

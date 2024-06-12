@@ -15,3 +15,7 @@ This application processes Kafka events, performs the necessary business logic (
 
 1. **Kafka Consumer**: Listens to the Kafka events to process creation/transfer events.
 2. **Service**: Performs the business logic for account creation and publishes completion events to Kafka.
+
+## References
+
+* https://www.baeldung.com/spring-boot-kafka-testing

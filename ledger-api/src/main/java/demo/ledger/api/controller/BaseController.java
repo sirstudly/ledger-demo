@@ -2,8 +2,8 @@ package demo.ledger.api.controller;
 
 import demo.ledger.api.model.dto.RequestStatus;
 import demo.ledger.api.model.dto.RestResponse;
-import demo.ledger.api.model.exception.NotFoundException;
 import demo.ledger.api.model.exception.ValidationException;
+import demo.ledger.model.exception.NotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;

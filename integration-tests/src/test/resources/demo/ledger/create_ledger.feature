@@ -1,4 +1,7 @@
 Feature: Creating a new ledger
+  As an API user
+  I want to create a new ledger
+  So that I can keep track of my account information
 
   Scenario: Create a new ledger and check it can be queried
     When I submit a POST request to create a new ledger

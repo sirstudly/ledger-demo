@@ -6,11 +6,11 @@ import demo.ledger.api.model.dto.CreateLedgerAccountRequest;
 import demo.ledger.api.model.dto.RequestStatus;
 import demo.ledger.api.model.dto.RestResponse;
 import demo.ledger.api.model.dto.UuidLookup;
-import demo.ledger.api.model.exception.NotFoundException;
 import demo.ledger.api.service.LedgerService;
 import demo.ledger.model.LedgerAccount;
 import demo.ledger.model.dto.ApiOperation;
 import demo.ledger.model.dto.EventType;
+import demo.ledger.model.exception.NotFoundException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -19,6 +19,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,6 +35,9 @@ public class LedgerAccountController extends BaseController {
 
     private Gson gson;
     private final LedgerService ledgerService;
+
+    @Value( value = "${ledger.api.service.timeout.ms}" )
+    private long API_SERVICE_TIMEOUT_MS;
 
     @Autowired
     public LedgerAccountController( KafkaTemplate<String, String> kafkaTemplate, Gson gson, LedgerService ledgerService ) {
@@ -83,10 +87,10 @@ public class LedgerAccountController extends BaseController {
         // FIXME: "key" should be tied to the user so they write to the same partition (and are processed in the order it is received)
         // https://stackoverflow.com/a/58450517
         sendMessage( "USERID", payload );
-        return new RestResponse( RequestStatus.pending );
+        return ledgerService.waitForLedgerAccountCreation( request.getUuid(), API_SERVICE_TIMEOUT_MS );
     }
 
-    @Override // FIXME: consolidate this class with LedgerController since we use the same event topic?
+    @Override
     public String getEventTopic() {
         return KafkaTopicConfig.LEDGER_EVENTS_TOPIC;
     }

@@ -56,4 +56,8 @@ public class LedgerService {
         LOGGER.info( "Created ledger account: id={}", obj.getId() );
         return obj;
     }
+
+    public Optional<LedgerAccount> getLedgerAccount( String uuid ) {
+        return ledgerAccountRepository.findOne( Example.of( LedgerAccount.builder().uuid( uuid.toLowerCase() ).build() ) );
+    }
 }

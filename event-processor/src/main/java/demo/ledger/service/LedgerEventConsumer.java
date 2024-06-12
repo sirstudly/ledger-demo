@@ -79,7 +79,12 @@ public class LedgerEventConsumer {
                 LedgerAccount ledgerAccount = gson.fromJson( gson.toJson( req ), LedgerAccount.class );
                 final String ledgerAccountUuid = ledgerAccount.getUuid();
 
-                Ledger parentLedger = ledgerService.getLedger( ledgerAccount.getLedgerUuid() )
+                // first check that a ledger doesn't already exist with the same UUID
+                if ( ledgerService.getLedgerAccount( ledgerAccountUuid ).isPresent() ) {
+                    throw new DuplicateKeyException( EventType.LEDGER_ACCOUNT_CREATION_FAILED, ledgerAccountUuid, "Ledger account already exists with this UUID" );
+                }
+
+                Ledger parentLedger = ledgerService.getLedger( ledgerAccount.getLedger().getUuid() )
                         .orElseThrow( () -> new NotFoundException( EventType.LEDGER_ACCOUNT_CREATION_FAILED, ledgerAccountUuid, "No matching ledger found." ) );
 
                 ledgerAccount = ledgerService.createLedgerAccount(

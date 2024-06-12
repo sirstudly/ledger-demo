@@ -3,6 +3,7 @@ package demo.ledger.api.model.dto;
 import demo.ledger.api.model.validation.ValidUUID;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -21,10 +22,9 @@ public class CreateLedgerAccountRequest {
     @Schema( description = "A unique UUID to identify this ledger account" )
     private String uuid;
 
-    @NotBlank
-    @ValidUUID
+    @NotNull
     @Schema( description = "The UUID of the ledger this account belongs to" )
-    private String ledgerUuid;
+    private UuidLookup ledger;
 
     @NotBlank
     @Size( max = 1000 )

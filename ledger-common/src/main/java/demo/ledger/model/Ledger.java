@@ -1,5 +1,7 @@
 package demo.ledger.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -14,6 +16,8 @@ import java.time.OffsetDateTime;
 
 @Entity
 @Table( name = "ledger" )
+@JsonInclude( JsonInclude.Include.NON_NULL )
+@JsonIgnoreProperties( {"hibernateLazyInitializer", "handler"} )
 @Builder
 @Data
 @AllArgsConstructor

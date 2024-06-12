@@ -2,7 +2,6 @@ package demo.ledger;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import io.cucumber.java.en.And;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,7 +9,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -34,9 +32,9 @@ public class CucumberTestState {
         this.ledgerAccountUrl = baseUrl + "/api/ledger_account";
     }
 
-    public CucumberTestState createNewLedger() throws Exception {
+    public CucumberTestState createNewLedger( String uuid ) throws Exception {
         request = new JsonObject();
-        request.addProperty( "uuid", UUID.randomUUID().toString() );
+        request.addProperty( "uuid", uuid );
         request.addProperty( "name", "My first ledger" );
         request.addProperty( "description", "Ledger containing all my accounts" );
         LOGGER.info( "request={}", gson.toJson( request ) );
@@ -57,15 +55,17 @@ public class CucumberTestState {
         return this;
     }
 
-    public CucumberTestState createNewLedgerAccount() throws Exception {
+    public CucumberTestState createNewLedgerAccount( String uuid ) throws Exception {
 
         assertThat( ledgerUuid ).isNotNull();
         request = new JsonObject();
-        request.addProperty( "uuid", UUID.randomUUID().toString() );
-        request.addProperty( "ledgerUuid", ledgerUuid );
+        request.addProperty( "uuid", uuid );
         request.addProperty( "name", "My first ledger account" );
         request.addProperty( "description", "Ledger account containing all my transactions" );
         request.addProperty( "currency", "USD" );
+        JsonObject ledgerLookup = new JsonObject();
+        ledgerLookup.addProperty( "uuid", ledgerUuid );
+        request.add( "ledger", ledgerLookup );
         LOGGER.info( "request={}", gson.toJson( request ) );
 
         HttpRequest httpReq = HttpRequest.newBuilder()
@@ -136,5 +136,19 @@ public class CucumberTestState {
         JsonObject resp = gson.fromJson( response.body(), JsonObject.class );
         assertThat( resp.get( fieldName ).getAsBigInteger() ).isPositive();
         return this;
+    }
+
+    public CucumberTestState fieldMatches( String fieldName, String value ) {
+        JsonObject resp = gson.fromJson( response.body(), JsonObject.class );
+        assertThat( resp.get( fieldName ).getAsString() ).isEqualTo( value );
+        return this;
+    }
+
+    public String getLedgerUuid() {
+        return this.ledgerUuid;
+    }
+
+    public String getLedgerAccountUuid() {
+        return this.ledgerAccountUuid;
     }
 }

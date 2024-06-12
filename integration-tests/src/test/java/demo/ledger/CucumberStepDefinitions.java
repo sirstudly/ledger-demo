@@ -1,22 +1,13 @@
 package demo.ledger;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.util.UUID;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 public class CucumberStepDefinitions {
 
@@ -32,20 +23,39 @@ public class CucumberStepDefinitions {
     }
 
     @Given( "I already have an existing ledger" )
-    public void createLedger() throws Exception {
+    public void createNewLedgerAssertCompleted() throws Exception {
         getState()
-                .createNewLedger()
-                .statusCodeIs( 202 );
+                .createNewLedger( UUID.randomUUID().toString() )
+                .statusCodeIs( 202 )
+                .responseStatusIs( "completed" );
     }
 
     @When( "I submit a POST request to create a new ledger" )
     public void createNewLedger() throws Exception {
-        getState().createNewLedger();
+        getState().createNewLedger( UUID.randomUUID().toString() );
     }
 
-    @When("I submit a POST request to create a new ledger account")
+    @When( "I submit a POST request to create a new ledger with the previous UUID" )
+    public void createNewLedgerWithPreviousUUID() throws Exception {
+        getState().createNewLedger( getState().getLedgerUuid() );
+    }
+
+    @When( "I submit a POST request to create a new ledger account" )
     public void createNewLedgerAccount() throws Exception {
-        getState().createNewLedgerAccount();
+        getState().createNewLedgerAccount( UUID.randomUUID().toString() );
+    }
+
+    @Given( "I already have an existing ledger account" )
+    public void createNewLedgerAccountAssertCompleted() throws Exception {
+        getState()
+                .createNewLedgerAccount( UUID.randomUUID().toString() )
+                .statusCodeIs( 202 )
+                .responseStatusIs( "completed" );
+    }
+
+    @When( "I submit a POST request to create a new ledger account with the previous UUID" )
+    public void createNewLedgerAccountWithPreviousUUID() throws Exception {
+        getState().createNewLedgerAccount( getState().getLedgerAccountUuid() );
     }
 
     @Then( "the status code is {int}" )
@@ -86,5 +96,10 @@ public class CucumberStepDefinitions {
     @And( "the {string} field is a non-zero integer" )
     public void fieldNonZeroInteger( String fieldName ) {
         getState().fieldNonZeroInteger( fieldName );
+    }
+
+    @And( "the {string} field is {string}" )
+    public void fieldMatchesValue( String fieldName, String value ) {
+        getState().fieldMatches( fieldName, value );
     }
 }

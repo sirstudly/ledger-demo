@@ -2,6 +2,7 @@ package demo.ledger.api.model.dto;
 
 import demo.ledger.api.model.validation.ValidUUID;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -24,6 +25,7 @@ public class CreateLedgerAccountRequest {
 
     @NotNull
     @Schema( description = "The UUID of the ledger this account belongs to" )
+    @Valid
     private UuidLookup ledger;
 
     @NotBlank

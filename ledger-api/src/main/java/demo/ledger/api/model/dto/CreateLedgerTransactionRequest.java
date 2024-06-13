@@ -2,6 +2,7 @@ package demo.ledger.api.model.dto;
 
 import demo.ledger.api.model.validation.ValidUUID;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
@@ -28,6 +29,7 @@ public class CreateLedgerTransactionRequest {
     private String description;
 
     @NotEmpty
+    @Valid
     private List<LedgerEntryRequest> ledgerEntries;
 
 }

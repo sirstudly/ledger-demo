@@ -2,6 +2,7 @@ package demo.ledger.api.model.dto;
 
 import demo.ledger.api.model.validation.ValidLedgerTransferDirection;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -18,8 +19,8 @@ import java.math.BigInteger;
 public class LedgerEntryRequest {
 
     @NotNull
-    @Schema( description = "The unique ledger account UUID for which this ledger entry belongs" )
-    private UuidLookup ledgerAccount;
+    @Valid
+    private LedgerEntryAccount ledgerAccount;
 
     @NotNull
     @Schema( description = "The amount to transfer in the ledger currency base unit" )

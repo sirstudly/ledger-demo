@@ -5,6 +5,8 @@ import com.google.gson.JsonObject;
 import demo.ledger.model.FailedProcessingEvent;
 import demo.ledger.model.Ledger;
 import demo.ledger.model.LedgerAccount;
+import demo.ledger.model.LedgerEntry;
+import demo.ledger.model.LedgerTransaction;
 import demo.ledger.model.dto.ApiOperation;
 import demo.ledger.model.dto.EventType;
 import demo.ledger.model.dto.FailedResponse;
@@ -56,48 +58,13 @@ public class LedgerEventConsumer {
         try {
             JsonObject obj = gson.fromJson( in, JsonObject.class );
             if ( EventType.CREATE_LEDGER.name().equals( obj.get( "eventType" ).getAsString() ) ) {
-                JsonObject req = obj.get( "data" ).getAsJsonObject();
-                Ledger ledger = gson.fromJson( gson.toJson( req ), Ledger.class );
-
-                // first check that another ledger doesn't already exist with the same UUID
-                if ( ledgerService.getLedger( ledger.getUuid() ).isPresent() ) {
-                    throw new DuplicateKeyException( EventType.LEDGER_CREATION_FAILED, ledger.getUuid(), "Ledger already exists with this UUID" );
-                }
-
-                ledger = ledgerService.createLedger(
-                        ledger.getUuid(),
-                        ledger.getName(),
-                        ledger.getDescription() );
-
-                sendMessage( LEDGER_EVENTS_TOPIC, gson.toJson(
-                        new ApiOperation<Ledger>()
-                                .withEventType( EventType.LEDGER_CREATED )
-                                .withData( ledger ) ) );
+                handleCreateLedgerEvent( obj );
             }
             else if ( EventType.CREATE_LEDGER_ACCOUNT.name().equals( obj.get( "eventType" ).getAsString() ) ) {
-                JsonObject req = obj.get( "data" ).getAsJsonObject();
-                LedgerAccount ledgerAccount = gson.fromJson( gson.toJson( req ), LedgerAccount.class );
-                final String ledgerAccountUuid = ledgerAccount.getUuid();
-
-                // first check that a ledger doesn't already exist with the same UUID
-                if ( ledgerService.getLedgerAccount( ledgerAccountUuid ).isPresent() ) {
-                    throw new DuplicateKeyException( EventType.LEDGER_ACCOUNT_CREATION_FAILED, ledgerAccountUuid, "Ledger account already exists with this UUID" );
-                }
-
-                Ledger parentLedger = ledgerService.getLedger( ledgerAccount.getLedger().getUuid() )
-                        .orElseThrow( () -> new NotFoundException( EventType.LEDGER_ACCOUNT_CREATION_FAILED, ledgerAccountUuid, "No matching ledger found." ) );
-
-                ledgerAccount = ledgerService.createLedgerAccount(
-                        parentLedger,
-                        ledgerAccount.getUuid(),
-                        ledgerAccount.getName(),
-                        ledgerAccount.getDescription(),
-                        ledgerAccount.getCurrency() );
-
-                sendMessage( LEDGER_EVENTS_TOPIC, gson.toJson(
-                        new ApiOperation<LedgerAccount>()
-                                .withEventType( EventType.LEDGER_ACCOUNT_CREATED )
-                                .withData( ledgerAccount ) ) );
+                handleCreateLedgerAccountEvent( obj );
+            }
+            else if ( EventType.CREATE_LEDGER_TRANSACTION.name().equals( obj.get( "eventType" ).getAsString() ) ) {
+                handleCreateLedgerTransactionEvent( obj );
             }
             else {
                 LOGGER.warn( "Unsupported event type: {}", obj.get( "eventType" ).getAsString() );
@@ -128,6 +95,116 @@ public class LedgerEventConsumer {
                     .build() )
             );
         }
+    }
+
+    /**
+     * Saves the new ledger in the datastore and emits a LEDGER_CREATED event on successful completion.
+     *
+     * @param obj deserialized event payload
+     * @throws DuplicateKeyException if UUID already exists for ledger
+     */
+    private void handleCreateLedgerEvent( JsonObject obj ) throws DuplicateKeyException {
+        JsonObject req = obj.get( "data" ).getAsJsonObject();
+        Ledger ledger = gson.fromJson( gson.toJson( req ), Ledger.class );
+
+        // first check that another ledger doesn't already exist with the same UUID
+        if ( ledgerService.getLedger( ledger.getUuid() ).isPresent() ) {
+            throw new DuplicateKeyException( EventType.LEDGER_CREATION_FAILED, ledger.getUuid(), "Ledger already exists with this UUID" );
+        }
+
+        ledger = ledgerService.createLedger(
+                ledger.getUuid(),
+                ledger.getName(),
+                ledger.getDescription() );
+
+        sendMessage( LEDGER_EVENTS_TOPIC, gson.toJson(
+                new ApiOperation<Ledger>()
+                        .withEventType( EventType.LEDGER_CREATED )
+                        .withData( ledger ) ) );
+    }
+
+    /**
+     * Saves the new ledger account in the datastore and emits a LEDGER_ACCOUNT_CREATED event on successful completion.
+     *
+     * @param obj deserialized event payload
+     * @throws DuplicateKeyException if UUID already exists for ledger
+     * @throws NotFoundException     if parent ledger could not be found
+     */
+    private void handleCreateLedgerAccountEvent( JsonObject obj ) throws DuplicateKeyException, NotFoundException {
+        JsonObject req = obj.get( "data" ).getAsJsonObject();
+        LedgerAccount ledgerAccount = gson.fromJson( gson.toJson( req ), LedgerAccount.class );
+        final String ledgerAccountUuid = ledgerAccount.getUuid();
+
+        // first check that a ledger doesn't already exist with the same UUID
+        if ( ledgerService.getLedgerAccount( ledgerAccountUuid ).isPresent() ) {
+            throw new DuplicateKeyException( EventType.LEDGER_ACCOUNT_CREATION_FAILED, ledgerAccountUuid, "Ledger account already exists with this UUID" );
+        }
+
+        Ledger parentLedger = ledgerService.getLedger( ledgerAccount.getLedger().getUuid() )
+                .orElseThrow( () -> new NotFoundException( EventType.LEDGER_ACCOUNT_CREATION_FAILED, ledgerAccountUuid, "No matching ledger found." ) );
+
+        ledgerAccount = ledgerService.createLedgerAccount(
+                parentLedger,
+                ledgerAccount.getUuid(),
+                ledgerAccount.getName(),
+                ledgerAccount.getDescription(),
+                ledgerAccount.getCurrency() );
+
+        sendMessage( LEDGER_EVENTS_TOPIC, gson.toJson(
+                new ApiOperation<LedgerAccount>()
+                        .withEventType( EventType.LEDGER_ACCOUNT_CREATED )
+                        .withData( ledgerAccount ) ) );
+    }
+
+    /**
+     * Saves the new ledger transaction in the datastore and emits a LEDGER_TRANSACTION_CREATED event on successful completion.
+     *
+     * @param obj deserialized event payload
+     * @throws DuplicateKeyException if UUID already exists for ledger transaction
+     * @throws NotFoundException     if parent ledger account(s) could not be found
+     */
+    private void handleCreateLedgerTransactionEvent( JsonObject obj ) throws DuplicateKeyException, NotFoundException {
+        JsonObject req = obj.get( "data" ).getAsJsonObject();
+        LedgerTransaction ledgerTxn = gson.fromJson( gson.toJson( req ), LedgerTransaction.class );
+        final String ledgerTxnUuid = ledgerTxn.getUuid();
+
+        // first load all the ledger accounts from the ledger entries
+        for ( int i = 0; i < ledgerTxn.getLedgerEntries().size(); i++ ) {
+            LedgerEntry entry = ledgerTxn.getLedgerEntries().get( i );
+            LedgerAccount acct = ledgerService.getLedgerAccount( entry.getLedgerAccount().getUuid() )
+                    .orElseThrow( () -> new NotFoundException( EventType.LEDGER_TRANSACTION_CREATION_FAILED, ledgerTxnUuid,
+                            "No matching ledger account found for UUID " + entry.getLedgerAccount().getUuid() ) );
+            entry.setLedgerAccount( acct ); // replace with "live" ledger account
+            entry.setCreatedDate( OffsetDateTime.now() );
+        }
+
+        ledgerTxn = ledgerService.createLedgerTransaction(
+                ledgerTxn.getUuid(),
+                ledgerTxn.getDescription(),
+                ledgerTxn.getLedgerEntries() );
+
+        sendMessage( LEDGER_EVENTS_TOPIC, gson.toJson(
+                new ApiOperation<LedgerTransaction>()
+                        .withEventType( EventType.LEDGER_TRANSACTION_CREATED )
+                        // re-serialize to a normal POJO otherwise we get an exception attempting serialize HibernateProxy
+                        .withData( LedgerTransaction.builder()
+                                .id( ledgerTxn.getId() )
+                                .uuid( ledgerTxn.getUuid() )
+                                .description( ledgerTxn.getDescription() )
+                                .ledgerEntries( ledgerTxn.getLedgerEntries().stream().map( entry ->
+                                        LedgerEntry.builder()
+                                                .id( entry.getId() )
+                                                .amount( entry.getAmount() )
+                                                .direction( entry.getDirection() )
+                                                .ledgerAccount( LedgerAccount.builder()
+                                                        .id( entry.getLedgerAccount().getId() )
+                                                        .uuid( entry.getLedgerAccount().getUuid() )
+                                                        .build() )
+                                                .createdDate( entry.getCreatedDate() )
+                                                .build()
+                                ).toList() )
+                                .createdDate( ledgerTxn.getCreatedDate() )
+                                .build() ) ) );
     }
 
     protected void sendMessage( String topic, String payload ) {

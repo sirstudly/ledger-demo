@@ -5,8 +5,8 @@ Feature: Creating a new ledger account with duplicate key fails with an appropri
   So that I can correct my request
 
   Scenario: Attempt to create a new ledger account with an existing account with the same UUID
-    Given I already have an existing ledger
-    And I already have an existing ledger account
+    Given I already have an existing ledger for Stacey
+    And I already have an existing ledger account for Stacey
     When I submit a POST request to create a new ledger account with the previous UUID
     Then the status code is 202
     And the status is 'failed'

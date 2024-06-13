@@ -14,10 +14,10 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Target( ElementType.FIELD )
 @Constraint( validatedBy = {} )
 @Retention( RUNTIME )
-@Pattern( regexp = "^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$" )
+@Pattern( regexp = "^(debit|credit)$" )
 @ReportAsSingleViolation
-public @interface ValidUUID {
-    String message() default "Invalid UUID (only lowercase characters allowed)";
+public @interface ValidLedgerTransferDirection {
+    String message() default "Only one of debit or credit is allowed";
 
     Class<?>[] groups() default {};
 

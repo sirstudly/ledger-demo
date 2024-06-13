@@ -5,7 +5,7 @@ Feature: Creating a new ledger with duplicate key fails with an appropriate mess
   So that I can correct my request
 
   Scenario: Attempt to create a new ledger with an existing ledger with the same UUID
-    Given I already have an existing ledger
+    Given I already have an existing ledger for Dougie
     When I submit a POST request to create a new ledger with the previous UUID
     Then the status code is 202
     And the status is 'failed'

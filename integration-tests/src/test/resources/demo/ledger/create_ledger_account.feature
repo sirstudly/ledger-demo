@@ -4,8 +4,8 @@ Feature: Creating a new ledger account
   So that I can keep track of my account transactions
 
   Scenario: Create a new ledger account and check it can be queried
-    Given I already have an existing ledger
-    When I submit a POST request to create a new ledger account
+    Given I already have an existing ledger for Becca
+    When I submit a POST request to create a new ledger account for Becca
     Then the status code is 202
     And the status is 'completed'
     And the 'uuid' ledgerAccount field matches that in the request

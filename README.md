@@ -49,3 +49,25 @@ Run ```docker-compose up --build``` in this directory to build and run the follo
 - Apache Kafka: Our event streaming platform. It can be accessed on port 29092.
 - Apache ZooKeeper: The distribution and coordination server used by Kafka. It can be accessed on port 2181.
 - PostgresSQL: Our datastore. It can be accessed on port 5432.
+
+## Testing
+The ``integration-tests`` folder contains end-to-end cucumber integration tests which you can run against the REST API
+to validate correct behaviour. It is meant to run standalone and does not have any dependencies on the other projects.
+
+## Data Model
+
+TODO
+
+## Sample Request/Response
+
+TODO
+
+attach Postman 
+
+## Things still TODO
+- move all repository classes to common
+- Unit test coverage is not exhaustive. I've only included a few major classes as an example.
+- No user authentication/authorization for any requests. Could use JWT to avoid hit to DB and to improve scalability.
+- Setup a Jenkins server to run tests/redeploy via Git hooks.
+- Get Ledger should return list of Accounts
+  - Get Accounts should return list of transactions

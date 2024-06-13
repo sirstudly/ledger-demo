@@ -4,11 +4,14 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import demo.ledger.api.model.dto.CreateLedgerAccountResponse;
 import demo.ledger.api.model.dto.CreateLedgerResponse;
+import demo.ledger.api.model.dto.CreateLedgerTransactionResponse;
+import demo.ledger.api.repository.LedgerTransactionRepository;
 import demo.ledger.model.LedgerAccount;
 import demo.ledger.api.model.dto.RequestStatus;
 import demo.ledger.api.repository.LedgerAccountRepository;
 import demo.ledger.api.repository.LedgerRepository;
 import demo.ledger.model.Ledger;
+import demo.ledger.model.LedgerTransaction;
 import demo.ledger.model.dto.EventType;
 import demo.ledger.model.dto.FailedResponse;
 import org.slf4j.Logger;
@@ -37,14 +40,18 @@ public class LedgerService {
     private static final Logger LOGGER = LoggerFactory.getLogger( LedgerService.class );
     private final LedgerRepository ledgerRepository;
     private final LedgerAccountRepository ledgerAccountRepository;
+    private final LedgerTransactionRepository ledgerTransactionRepository;
     private final Gson gson;
     private final ConcurrentMap<String, CompletableFuture<CreateLedgerResponse>> pendingLedgers = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, CompletableFuture<CreateLedgerAccountResponse>> pendingLedgerAccounts = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, CompletableFuture<CreateLedgerTransactionResponse>> pendingLedgerTransactions = new ConcurrentHashMap<>();
 
     @Autowired
-    public LedgerService( LedgerRepository ledgerRepository, LedgerAccountRepository ledgerAccountRepository, Gson gson ) {
+    public LedgerService( LedgerRepository ledgerRepository, LedgerAccountRepository ledgerAccountRepository,
+                          LedgerTransactionRepository ledgerTransactionRepository, Gson gson ) {
         this.ledgerRepository = ledgerRepository;
         this.ledgerAccountRepository = ledgerAccountRepository;
+        this.ledgerTransactionRepository = ledgerTransactionRepository;
         this.gson = gson;
     }
 
@@ -85,6 +92,18 @@ public class LedgerService {
                 completeLedgerAccountCreation( new CreateLedgerAccountResponse( RequestStatus.failed )
                         .withError( failedResponse.getError() )
                         .withLedgerAccount( LedgerAccount.builder().uuid( failedResponse.getUuid() ).build() ) );
+            }
+            else if ( EventType.LEDGER_TRANSACTION_CREATED.name().equals( eventType ) ) {
+                JsonObject req = obj.get( "data" ).getAsJsonObject();
+                LedgerTransaction ledgerTransaction = gson.fromJson( gson.toJson( req ), LedgerTransaction.class );
+                completeLedgerTransactionCreation( new CreateLedgerTransactionResponse( RequestStatus.completed ).withLedgerTransaction( ledgerTransaction ) );
+            }
+            else if ( EventType.LEDGER_TRANSACTION_CREATION_FAILED.name().equals( eventType ) ) {
+                JsonObject req = obj.get( "data" ).getAsJsonObject();
+                FailedResponse failedResponse = gson.fromJson( gson.toJson( req ), FailedResponse.class );
+                completeLedgerTransactionCreation( new CreateLedgerTransactionResponse( RequestStatus.failed )
+                        .withError( failedResponse.getError() )
+                        .withLedgerTransaction( LedgerTransaction.builder().uuid( failedResponse.getUuid() ).build() ) );
             }
         }
     }
@@ -138,6 +157,30 @@ public class LedgerService {
     }
 
     /**
+     * Wait for the ledger transaction identified by the given UUID to be created for a given amount of time.
+     * If the request does not come back within the allotted time, a status response of "pending" is returned.
+     *
+     * @param ledgerTransactionUuid the unique identifier for the ledger account
+     * @param timeoutMillis         the amount of time to wait before returning a "pending" response
+     * @return non-null response
+     */
+    public CreateLedgerTransactionResponse waitForLedgerTransactionCreation( String ledgerTransactionUuid, long timeoutMillis ) {
+        CompletableFuture<CreateLedgerTransactionResponse> future = new CompletableFuture<>();
+        pendingLedgerTransactions.put( ledgerTransactionUuid, future );
+
+        try {
+            return future.get( timeoutMillis, TimeUnit.MILLISECONDS );
+        }
+        catch ( TimeoutException | InterruptedException e ) {
+            // Return pending status if timeout occurs
+            return new CreateLedgerTransactionResponse( RequestStatus.pending );
+        }
+        catch ( ExecutionException e ) {
+            return new CreateLedgerTransactionResponse( RequestStatus.failed ).withError( e.getMessage() );
+        }
+    }
+
+    /**
      * Notify any pending requests that the given ledger has completed.
      *
      * @param response completed ledger response
@@ -152,7 +195,7 @@ public class LedgerService {
     /**
      * Notify any pending requests that the given ledger account has completed.
      *
-     * @param response completed ledger response
+     * @param response completed ledger account response
      */
     private void completeLedgerAccountCreation( CreateLedgerAccountResponse response ) {
         CompletableFuture<CreateLedgerAccountResponse> future = pendingLedgerAccounts.remove( response.getLedgerAccount().getUuid() );
@@ -161,12 +204,28 @@ public class LedgerService {
         }
     }
 
+    /**
+     * Notify any pending requests that the given ledger transaction has completed.
+     *
+     * @param response completed ledger transaction response
+     */
+    private void completeLedgerTransactionCreation( CreateLedgerTransactionResponse response ) {
+        CompletableFuture<CreateLedgerTransactionResponse> future = pendingLedgerTransactions.remove( response.getLedgerTransaction().getUuid() );
+        if ( future != null ) {
+            future.complete( response );
+        }
+    }
+
+    // https://docs.spring.io/spring-data/jpa/reference/repositories/query-by-example.html
     public Optional<Ledger> findLedgerByUuid( String uuid ) {
-        // https://docs.spring.io/spring-data/jpa/reference/repositories/query-by-example.html
         return ledgerRepository.findOne( Example.of( Ledger.builder().uuid( uuid ).build() ) );
     }
 
     public Optional<LedgerAccount> findLedgerAccountByUuid( String uuid ) {
         return ledgerAccountRepository.findOne( Example.of( LedgerAccount.builder().uuid( uuid ).build() ) );
+    }
+
+    public Optional<LedgerTransaction> findLedgerTransactionByUuid( String uuid ) {
+        return ledgerTransactionRepository.findOne( Example.of( LedgerTransaction.builder().uuid( uuid ).build() ) );
     }
 }

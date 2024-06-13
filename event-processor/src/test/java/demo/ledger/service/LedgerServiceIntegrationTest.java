@@ -60,6 +60,7 @@ public class LedgerServiceIntegrationTest {
     }
 
     @Test
+    @Transactional
     public void testCreateTransaction() throws Exception {
         Ledger ledgerBob = ledgerService.createLedger( UUID.randomUUID().toString(), "Bob's ledger", "Bob's accounts" );
         Ledger ledgerAnn = ledgerService.createLedger( UUID.randomUUID().toString(), "Ann's ledger", "Ann's accounts" );
@@ -82,10 +83,19 @@ public class LedgerServiceIntegrationTest {
                                 .createdDate( OffsetDateTime.now() )
                                 .build()
                 ) );
-        LOGGER.info("CREATED transaction id={}, uuid={}", txn.getId(), txn.getUuid());
+        LOGGER.info( "CREATED transaction id={}, uuid={}", txn.getId(), txn.getUuid() );
 
         LedgerTransaction fetchedTxn = ledgerService.getLedgerTransaction( txn.getUuid() )
                 .orElseThrow( () -> new NotFoundException( "ledger transaction not found!" ) );
-        LOGGER.info("FOUND transaction id={}, uuid={}", fetchedTxn.getId(), fetchedTxn.getUuid());
+        LOGGER.info( "FOUND transaction id={}, uuid={}", fetchedTxn.getId(), fetchedTxn.getUuid() );
+
+        assertThat( fetchedTxn.getUuid() ).isEqualTo( txn.getUuid() );
+        assertThat( fetchedTxn.getId() ).isEqualTo( txn.getId() );
+        assertThat( fetchedTxn.getDescription() ).isEqualTo( txn.getDescription() );
+
+        assertThat( fetchedTxn.getLedgerEntries().size() ).isEqualTo( txn.getLedgerEntries().size() );
+        fetchedTxn.getLedgerEntries().stream().forEach( fetchedEntry -> {
+            assertThat( txn.getLedgerEntries().contains( fetchedEntry ) ).isTrue();
+        } );
     }
 }

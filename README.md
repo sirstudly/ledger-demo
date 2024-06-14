@@ -54,7 +54,7 @@ Run ```docker-compose up --build``` in this directory to build and run the follo
 The ``integration-tests`` folder contains end-to-end cucumber integration tests which you can run against the REST API
 to validate correct behaviour. It is meant to run standalone and does not have any dependencies on the other projects.
 
-![Watch the build and test demo video!](build-and-test-demo.mp4)
+![Watch the build and test demo video!](https://github.com/sirstudly/ledger-demo/raw/master/build-and-test-demo.mp4)
 
 ## Data Model
 

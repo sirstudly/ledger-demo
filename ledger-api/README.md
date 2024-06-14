@@ -11,7 +11,6 @@ The following application handles the REST API for the Bank Ledger Demo.
     - It uses a `CompletableFuture` to track the completion of the request.
 4. **API Response**:
     - If the request is invalid or fails some business validation, a "failed" status is returned to the client.
-      - **FIXME: handle DB errors (eg. duplicate keys) by sending a FAILED event??**
     - If the request completes within the timeout, the application returns the successful result to the client.
     - If the timeout is reached, it returns a "pending" status to the client.
     - Once the result is ready, the client can check back at a later time.

@@ -60,7 +60,10 @@ to validate correct behaviour. It is meant to run standalone and does not have a
 
 ## Sample Requests/Responses
 
-Here are some sample requests to get you starated:
+The Swagger UI is temporarily deployed on https://7738-31-94-68-63.ngrok-free.app/swagger-ui/index.html
+<br>However it currently doesn't support the "Try it out" feature due to a CORS error.
+
+Here are some sample requests to get you started:
 
 **Create Ledger:** `http://<host>:<port>/api/ledger`
 

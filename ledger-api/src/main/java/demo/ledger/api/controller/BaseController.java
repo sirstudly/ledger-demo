@@ -6,16 +6,22 @@ import demo.ledger.api.model.exception.ValidationException;
 import demo.ledger.model.exception.NotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.validation.FieldError;
+import org.springframework.validation.method.ParameterValidationResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Common controller class.
@@ -46,6 +52,30 @@ public abstract class BaseController {
             String errorMessage = error.getDefaultMessage();
             errors.put( fieldName, errorMessage );
         } );
+        return new RestResponse( RequestStatus.failed ).withErrors( errors );
+    }
+
+    @ResponseStatus( HttpStatus.BAD_REQUEST )
+    @ExceptionHandler( MissingServletRequestParameterException.class )
+    public RestResponse handleValidationExceptions( MissingServletRequestParameterException ex ) {
+        Map<String, String> errors = new HashMap<>();
+        errors.put( ex.getParameterName(), ex.getMessage() );
+        return new RestResponse( RequestStatus.failed ).withErrors( errors );
+    }
+
+    @ResponseStatus( HttpStatus.BAD_REQUEST )
+    @ExceptionHandler( HandlerMethodValidationException.class )
+    public RestResponse handleValidationExceptions( HandlerMethodValidationException ex ) {
+        Map<String, String> errors = new HashMap<>();
+        AtomicReference<Object> argument = new AtomicReference<>();
+        ex.getAllValidationResults()
+                .stream()
+                .peek( e -> argument.set( e.getArgument() ) )
+                .map( ParameterValidationResult::getResolvableErrors )
+                .flatMap( List::stream )
+                .map( MessageSourceResolvable::getDefaultMessage )
+                .peek( LOGGER::info )
+                .forEach( error -> errors.put( argument.get().toString(), error ) );
         return new RestResponse( RequestStatus.failed ).withErrors( errors );
     }
 

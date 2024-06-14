@@ -5,15 +5,18 @@ import com.google.gson.JsonObject;
 import demo.ledger.api.model.dto.CreateLedgerAccountResponse;
 import demo.ledger.api.model.dto.CreateLedgerResponse;
 import demo.ledger.api.model.dto.CreateLedgerTransactionResponse;
-import demo.ledger.api.repository.LedgerTransactionRepository;
-import demo.ledger.model.LedgerAccount;
+import demo.ledger.api.model.dto.GetBalanceResponse;
 import demo.ledger.api.model.dto.RequestStatus;
 import demo.ledger.api.repository.LedgerAccountRepository;
+import demo.ledger.api.repository.LedgerEntryRepository;
 import demo.ledger.api.repository.LedgerRepository;
+import demo.ledger.api.repository.LedgerTransactionRepository;
 import demo.ledger.model.Ledger;
+import demo.ledger.model.LedgerAccount;
 import demo.ledger.model.LedgerTransaction;
 import demo.ledger.model.dto.EventType;
 import demo.ledger.model.dto.FailedResponse;
+import demo.ledger.model.exception.NotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,9 +27,11 @@ import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Service;
 
+import java.math.BigInteger;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -41,6 +46,7 @@ public class LedgerService {
     private final LedgerRepository ledgerRepository;
     private final LedgerAccountRepository ledgerAccountRepository;
     private final LedgerTransactionRepository ledgerTransactionRepository;
+    private final LedgerEntryRepository ledgerEntryRepository;
     private final Gson gson;
     private final ConcurrentMap<String, CompletableFuture<CreateLedgerResponse>> pendingLedgers = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, CompletableFuture<CreateLedgerAccountResponse>> pendingLedgerAccounts = new ConcurrentHashMap<>();
@@ -48,10 +54,11 @@ public class LedgerService {
 
     @Autowired
     public LedgerService( LedgerRepository ledgerRepository, LedgerAccountRepository ledgerAccountRepository,
-                          LedgerTransactionRepository ledgerTransactionRepository, Gson gson ) {
+                          LedgerTransactionRepository ledgerTransactionRepository, LedgerEntryRepository ledgerEntryRepository, Gson gson ) {
         this.ledgerRepository = ledgerRepository;
         this.ledgerAccountRepository = ledgerAccountRepository;
         this.ledgerTransactionRepository = ledgerTransactionRepository;
+        this.ledgerEntryRepository = ledgerEntryRepository;
         this.gson = gson;
     }
 
@@ -227,5 +234,31 @@ public class LedgerService {
 
     public Optional<LedgerTransaction> findLedgerTransactionByUuid( String uuid ) {
         return ledgerTransactionRepository.findOne( Example.of( LedgerTransaction.builder().uuid( uuid ).build() ) );
+    }
+
+    /**
+     * Fetches a user's account balance up to a particular date/time.
+     *
+     * @param uuid          unique ID of the ledger account to query
+     * @param untilDateTime find all transactions up until this time (optional)
+     * @return balance response
+     * @throws NotFoundException if UUID does not match any account
+     */
+    public GetBalanceResponse fetchLedgerAccountBalance( String uuid, OffsetDateTime untilDateTime ) throws NotFoundException {
+
+        LedgerAccount ledgerAccount = findLedgerAccountByUuid( uuid )
+                .orElseThrow( () -> new NotFoundException( "No matching ledger account found" ) );
+        List<Object[]> results = untilDateTime == null ?
+                ledgerEntryRepository.getBalances( uuid ) : ledgerEntryRepository.getBalances( uuid, untilDateTime );
+
+        Object[] result = results.get( 0 );
+        return GetBalanceResponse.builder()
+                .uuid( uuid )
+                .name( ledgerAccount.getName() )
+                .description( ledgerAccount.getDescription() )
+                .totalCredits( (BigInteger) result[0] )
+                .totalDebits( (BigInteger) result[1] )
+                .timestamp( untilDateTime )
+                .build();
     }
 }

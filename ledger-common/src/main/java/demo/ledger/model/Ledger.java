@@ -37,10 +37,10 @@ public class Ledger {
     @Column( name = "description" )
     private String description;
 
-    @Column( name = "created_date" )
+    @Column( name = "created_date", columnDefinition = "TIMESTAMP WITH TIME ZONE" )
     private OffsetDateTime createdDate;
 
-    @Column( name = "last_updated_date" )
+    @Column( name = "last_updated_date", columnDefinition = "TIMESTAMP WITH TIME ZONE" )
     private OffsetDateTime lastUpdatedDate;
 
 }

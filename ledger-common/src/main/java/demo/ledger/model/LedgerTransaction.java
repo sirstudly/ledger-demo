@@ -46,6 +46,6 @@ public class LedgerTransaction {
     @JoinColumn( name = "ledger_transaction_id", referencedColumnName = "id" )
     private List<LedgerEntry> ledgerEntries;
 
-    @Column( name = "created_date", nullable = false )
+    @Column( name = "created_date", nullable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE" )
     private OffsetDateTime createdDate;
 }

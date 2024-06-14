@@ -45,6 +45,6 @@ public class LedgerEntry {
     @Enumerated( EnumType.STRING )
     private LedgerTransactionDirection direction;
 
-    @Column( name = "created_date", nullable = false )
+    @Column( name = "created_date", nullable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE" )
     private OffsetDateTime createdDate;
 }

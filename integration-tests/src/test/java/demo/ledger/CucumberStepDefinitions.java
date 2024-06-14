@@ -140,4 +140,24 @@ public class CucumberStepDefinitions {
     public void queryLedgerTransactionByUUID() throws Exception {
         getState().queryLedgerTransactionByUUID();
     }
+
+    @When( "I submit {int} random transactions between {word} and {word}" )
+    public void submitRandomTransactions( int numTransactions, String account1, String account2 ) throws Exception {
+        getState().submitRandomTransactions( numTransactions, account1, account2 );
+    }
+
+    @When( "I submit a balance request for {word}'s account" )
+    public void submitBalanceRequest( String accountName ) throws Exception {
+        getState().submitBalanceRequest( accountName );
+    }
+
+    @Then( "the debit and credit totals for all the balance requests sum to the same amount as all the random transactions" )
+    public void validateDebitCreditTotals() {
+        getState().validateDebitCreditTotals();
+    }
+
+    @Then( "the total amount of all credits equals the total amount of all debits" )
+    public void validateDebitAmountAndCreditTotalsAreTheSame() {
+        getState().validateDebitAmountAndCreditTotalsAreTheSame();
+    }
 }

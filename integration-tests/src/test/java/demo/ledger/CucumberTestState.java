@@ -14,6 +14,9 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -24,6 +27,11 @@ public class CucumberTestState {
     private final String ledgerUrl;
     private final String ledgerAccountUrl;
     private final String ledgerTransactionUrl;
+    private final String getBalanceUrl;
+
+    // fixed seed so that our tests are consistent and replayable
+    private final long RANDOM_SEED = 740248611806L;
+    private final Random random = new Random( RANDOM_SEED );
 
     // for simplicity, we only keep track of the last request/response
     private JsonObject request;
@@ -31,8 +39,13 @@ public class CucumberTestState {
     private String ledgerUuid;
     private String ledgerAccountUuid;
     private String ledgerTransactionUuid;
-    private Map<String, String> ledgerUuidMap = new HashMap<>();
-    private Map<String, String> ledgerAccountUuidMap = new HashMap<>();
+
+    // the following are maps keyed by account (name)
+    private final Map<String, String> ledgerUuidMap = new HashMap<>();
+    private final Map<String, String> ledgerAccountUuidMap = new HashMap<>();
+    private final Map<String, HttpResponse<String>> getBalanceResponseMap = new HashMap<>();
+    private final Map<String, BigInteger> debitTotalMap = new HashMap<>();
+    private final Map<String, BigInteger> creditTotalMap = new HashMap<>();
 
     public CucumberTestState( HttpClient httpClient, Gson gson, String baseUrl ) {
         this.httpClient = httpClient;
@@ -40,6 +53,7 @@ public class CucumberTestState {
         this.ledgerUrl = baseUrl + "/api/ledger";
         this.ledgerAccountUrl = baseUrl + "/api/ledger_account";
         this.ledgerTransactionUrl = baseUrl + "/api/ledger_transaction";
+        this.getBalanceUrl = baseUrl + "/api/get_balance";
     }
 
     public CucumberTestState createNewLedger( String uuid, String ledgerName ) throws Exception {
@@ -260,6 +274,105 @@ public class CucumberTestState {
 
     public CucumberTestState saveLedgerAccountUuidKeyedByName( String name ) {
         ledgerAccountUuidMap.put( name, ledgerAccountUuid );
+        return this;
+    }
+
+    /**
+     * Create a random number of transactions between account1 and account2.
+     *
+     * @param numTransactions number of transactions to submit
+     * @param account1        one of the account names
+     * @param account2        one of the other account names
+     * @return this object
+     * @throws Exception on submission failure
+     */
+    public CucumberTestState submitRandomTransactions( int numTransactions, String account1, String account2 ) throws Exception {
+        for ( int i = 0; i < numTransactions; i++ ) {
+            final boolean chooseWisely = random.nextBoolean();
+            final BigInteger transferAmount = new BigInteger( String.valueOf( random.nextInt( 10000 ) ) );
+
+            // each transaction is a double-entry (one debit and one credit)
+            LOGGER.info( "Submitting transfer transaction for " + transferAmount
+                    + " from " + ( chooseWisely ? account1 : account2 )
+                    + " to " + ( chooseWisely ? account2 : account1 ) );
+            createNewLedgerTransaction( UUID.randomUUID().toString(),
+                    "Random transaction #" + i + " between " + account1 + " and " + account2,
+                    transferAmount,
+                    transferAmount,
+                    chooseWisely ? account1 : account2,
+                    chooseWisely ? account2 : account1 );
+            statusCodeIs( 202 );
+            responseStatusIs( "completed" );
+
+            // keep track of the debit/credit totals so we can compare later
+            debitTotalMap.merge( chooseWisely ? account1 : account2, transferAmount, BigInteger::add );
+            creditTotalMap.merge( chooseWisely ? account2 : account1, transferAmount, BigInteger::add );
+        }
+
+        debitTotalMap.forEach( ( key, value ) -> LOGGER.info( "DEBIT total: " + key + " -> " + value ) );
+        creditTotalMap.forEach( ( key, value ) -> LOGGER.info( "CREDIT total: " + key + " -> " + value ) );
+        return this;
+    }
+
+    public CucumberTestState submitBalanceRequest( String accountName ) throws Exception {
+
+        HttpRequest httpReq = HttpRequest.newBuilder()
+                .uri( URI.create( getBalanceUrl + "?uuid=" + getLedgerAccountUuid( accountName ) ) )
+                .GET()
+                .build();
+
+        response = httpClient.send( httpReq, HttpResponse.BodyHandlers.ofString() );
+        LOGGER.info( "response={}", response.body() );
+
+        // keep track of the balances so we can query them later
+        getBalanceResponseMap.put( accountName, response );
+        return this;
+    }
+
+    /**
+     * Verifies the debit/credit totals from previous transactions add up to the balance requests.
+     *
+     * @return this object
+     */
+    public CucumberTestState validateDebitCreditTotals() {
+
+        // go through the get balance responses and check that the debit/credit totals are what we expect
+        getBalanceResponseMap.forEach( ( account, resp ) -> {
+            JsonObject obj = gson.fromJson( resp.body(), JsonObject.class );
+            BigInteger totalDebits = obj.get( "totalDebits" ).getAsBigInteger();
+            BigInteger totalCredits = obj.get( "totalCredits" ).getAsBigInteger();
+            LOGGER.info( "GetBalance for " + account + " says TOTAL DEBITS is " + totalDebits );
+            LOGGER.info( "GetBalance for " + account + " says TOTAL CREDITS is " + totalCredits );
+
+            // compare with what we submited in our transaction requests
+            assertThat( debitTotalMap.get( account ) ).as( "Checking debit total for %s", account ).isEqualTo( totalDebits );
+            assertThat( creditTotalMap.get( account ) ).as( "Checking credit total for %s", account ).isEqualTo( totalCredits );
+        } );
+        return this;
+    }
+
+    public CucumberTestState validateDebitAmountAndCreditTotalsAreTheSame() {
+        final AtomicReference<BigInteger> totalDebits = new AtomicReference<>();
+        final AtomicReference<BigInteger> totalCredits = new AtomicReference<>();
+        totalDebits.set( BigInteger.ZERO );
+        totalCredits.set( BigInteger.ZERO );
+
+        // total up all the debits/credits from the balance requests
+        getBalanceResponseMap.forEach( ( account, resp ) -> {
+            JsonObject obj = gson.fromJson( resp.body(), JsonObject.class );
+            totalDebits.set( totalDebits.get().add( obj.get( "totalDebits" ).getAsBigInteger() ) );
+            totalCredits.set( totalCredits.get().add( obj.get( "totalCredits" ).getAsBigInteger() ) );
+        } );
+
+        // total debits == total credits
+        assertThat( totalDebits.get() ).isEqualTo( totalCredits.get() );
+
+        // total up all the debits/credits from the original transactions
+        BigInteger debitTotal = debitTotalMap.values().stream().reduce( BigInteger.ZERO, BigInteger::add );
+        BigInteger creditTotal = creditTotalMap.values().stream().reduce( BigInteger.ZERO, BigInteger::add );
+
+        // total debits == total credits
+        assertThat( debitTotal ).isEqualTo( creditTotal );
         return this;
     }
 

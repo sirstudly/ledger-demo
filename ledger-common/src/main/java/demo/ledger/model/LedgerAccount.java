@@ -45,10 +45,10 @@ public class LedgerAccount {
     @Column( name = "currency", nullable = false )
     private String currency;
 
-    @Column( name = "created_date" )
+    @Column( name = "created_date", columnDefinition = "TIMESTAMP WITH TIME ZONE" )
     private OffsetDateTime createdDate;
 
-    @Column( name = "last_updated_date" )
+    @Column( name = "last_updated_date", columnDefinition = "TIMESTAMP WITH TIME ZONE" )
     private OffsetDateTime lastUpdatedDate;
 
 }

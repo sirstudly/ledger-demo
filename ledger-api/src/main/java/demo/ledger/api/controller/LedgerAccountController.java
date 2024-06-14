@@ -3,6 +3,7 @@ package demo.ledger.api.controller;
 import com.google.gson.Gson;
 import demo.ledger.api.config.KafkaTopicConfig;
 import demo.ledger.api.model.dto.CreateLedgerAccountRequest;
+import demo.ledger.api.model.dto.CreateLedgerAccountResponse;
 import demo.ledger.api.model.dto.RequestStatus;
 import demo.ledger.api.model.dto.RestResponse;
 import demo.ledger.api.model.dto.UuidLookup;
@@ -50,7 +51,7 @@ public class LedgerAccountController extends BaseController {
     @ApiResponses( value = {
             @ApiResponse( responseCode = "200", description = "Found the ledger account",
                     content = {@Content( mediaType = "application/json",
-                            schema = @Schema( implementation = CreateLedgerAccountRequest.class ) )} ),
+                            schema = @Schema( implementation = CreateLedgerAccountResponse.class ) )} ),
             @ApiResponse( responseCode = "400", description = "Invalid uuid supplied",
                     content = @Content ),
             @ApiResponse( responseCode = "404", description = "Ledger account not found",

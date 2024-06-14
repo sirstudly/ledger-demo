@@ -50,7 +50,7 @@ public class LedgerController extends BaseController {
     @ApiResponses( value = {
             @ApiResponse( responseCode = "200", description = "Found the ledger",
                     content = {@Content( mediaType = "application/json",
-                            schema = @Schema( implementation = CreateLedgerRequest.class ) )} ),
+                            schema = @Schema( implementation = CreateLedgerResponse.class ) )} ),
             @ApiResponse( responseCode = "400", description = "Invalid id supplied",
                     content = @Content ),
             @ApiResponse( responseCode = "404", description = "Ledger not found",

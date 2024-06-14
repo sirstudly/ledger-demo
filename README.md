@@ -54,6 +54,8 @@ Run ```docker-compose up --build``` in this directory to build and run the follo
 The ``integration-tests`` folder contains end-to-end cucumber integration tests which you can run against the REST API
 to validate correct behaviour. It is meant to run standalone and does not have any dependencies on the other projects.
 
+![Watch the build and test demo video!](build-and-test-demo.mp4)
+
 ## Data Model
 
 ![data model](https://www.moderntreasury.com/_next/image?url=https%3A%2F%2Fcdn.sanity.io%2Fimages%2F8nmbzj0x%2Fproduction%2F4498c4bf12ebec6822f9c3f4150a4e8254b7809b-2022x1002.png&w=3840&q=75)

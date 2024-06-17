@@ -54,11 +54,16 @@ Run ```docker-compose up --build``` in this directory to build and run the follo
 The ``integration-tests`` folder contains end-to-end cucumber integration tests which you can run against the REST API
 to validate correct behaviour. It is meant to run standalone and does not have any dependencies on the other projects.
 
-![Watch the build and test demo video!](https://github.com/sirstudly/ledger-demo/raw/master/build-and-test-demo.mp4)
+[Watch the build and test demo video!](https://github.com/sirstudly/ledger-demo/raw/master/build-and-test-demo.mp4)
 
 ## Data Model
 
 ![data model](https://www.moderntreasury.com/_next/image?url=https%3A%2F%2Fcdn.sanity.io%2Fimages%2F8nmbzj0x%2Fproduction%2F4498c4bf12ebec6822f9c3f4150a4e8254b7809b-2022x1002.png&w=3840&q=75)
+
+Optimistic locking has been implemented on the ledger_account table by way of a ``lock_version`` column. If two clients 
+update a record simultaneously, one client's changes are committed while the other client gets an error because the version 
+number won't match the one in the table. In this case "record" includes any attached child records in the ``ledger_entry`` table.
+After all, it's the child collection of ledger entries we want to version as part of a ledger account.
 
 ## Sample Requests/Responses
 
@@ -128,6 +133,7 @@ Response:
     "status": "completed",
     "ledgerAccount": {
         "id": 2,
+        "lockVersion": 1,
         "uuid": "a42f714c-ce90-4a9c-a06e-9a1b8842dfac",
         "ledger": {
             "id": 1,
@@ -152,6 +158,7 @@ Response:
 ```json
 {
     "id": 1,
+    "lockVersion": 1,
     "uuid": "a42f714c-ce90-4a9c-a06e-9a1b8842dfac",
     "ledger": {
         "id": 2,
@@ -179,6 +186,7 @@ Request:
     "ledgerEntries": [
         {
             "ledgerAccount": {
+                "lockVersion": 1,
                 "uuid": "a42f714c-ce90-4a9c-a06e-9a1b8842dfab"
             },
             "amount": 100,
@@ -186,6 +194,7 @@ Request:
         },
         {
             "ledgerAccount": {
+                "lockVersion": 1,
                 "uuid": "a42f714c-ce90-4a9c-a06e-9a1b8842dfac"
             },
             "amount": 100,
@@ -208,6 +217,7 @@ Response:
                 "id": 1,
                 "ledgerAccount": {
                     "id": 1,
+                    "lockVersion": 2,
                     "uuid": "a42f714c-ce90-4a9c-a06e-9a1b8842dfab"
                 },
                 "amount": 100,
@@ -218,6 +228,7 @@ Response:
                 "id": 2,
                 "ledgerAccount": {
                     "id": 2,
+                    "lockVersion": 2,
                     "uuid": "a42f714c-ce90-4a9c-a06e-9a1b8842dfac"
                 },
                 "amount": 100,
@@ -230,14 +241,15 @@ Response:
 }
 ```
 
-**Get Ledger Balance:** `http://<host>:<port>/api/get_balance?uuid=a42f714c-ce90-4a9c-a06e-9a1b8842dfac&timestamp=2024-06-22T03:38:41.532%2B00:00`
+**Get Ledger Balance (by account UUID):** `http://<host>:<port>/api/get_balance?uuid=a42f714c-ce90-4a9c-a06e-9a1b8842dfac&timestamp=2024-06-22T03:38:41.532%2B00:00`
 
 Response:
 ```json
 {
     "uuid": "316df247-cf38-4695-9f80-c63f6c72f678",
-    "name": "My First Ledger",
-    "description": "A collection of my accounts",
+    "lockVersion": 2,
+    "name": "My First Ledger Account",
+    "description": "This is used to hold account transactions",
     "totalDebits": 25,
     "totalCredits": 0,
     "timestamp": "2024-06-22T03:38:41.532Z"
@@ -248,11 +260,11 @@ Response:
 - Add more descriptions in swagger API documentation
 - move all repository classes to common package?
 - Unit test coverage is not exhaustive. I've only included a few major classes as an example.
+- Support updates/deletes to model objects via REST API
 - No user authentication/authorization for any requests. Could use JWT to avoid hit to DB and to improve scalability.
 - Setup a Jenkins server to run tests/redeploy via Git hooks.
 - Get Ledger should return list of Accounts
   - Get Accounts should return list of transactions
-- Implement optimistic locking on ledger accounts table
 
 ## References
 

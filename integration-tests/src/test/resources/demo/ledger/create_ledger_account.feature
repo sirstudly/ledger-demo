@@ -14,6 +14,7 @@ Feature: Creating a new ledger account
     And the 'currency' ledgerAccount field matches that in the request
     # id represents the primary key in the ledger account table
     And the 'id' ledgerAccount field is a non-zero integer
+    And the 'lockVersion' ledgerAccount field is equal to 1
 
     When I submit a GET request to retrieve the ledger account by its UUID
     And the status code is 200
@@ -22,3 +23,4 @@ Feature: Creating a new ledger account
     And the 'description' field matches that in the request
     And the 'currency' field matches that in the request
     And the 'id' field is a non-zero integer
+    And the 'lockVersion' field is 1

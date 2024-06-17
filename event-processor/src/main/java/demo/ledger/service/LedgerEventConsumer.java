@@ -171,9 +171,10 @@ public class LedgerEventConsumer {
         // first load all the ledger accounts from the ledger entries
         for ( int i = 0; i < ledgerTxn.getLedgerEntries().size(); i++ ) {
             LedgerEntry entry = ledgerTxn.getLedgerEntries().get( i );
-            LedgerAccount acct = ledgerService.getLedgerAccount( entry.getLedgerAccount().getUuid() )
+            LedgerAccount acct = ledgerService.getLedgerAccount( entry.getLedgerAccount().getUuid(), entry.getLedgerAccount().getLockVersion() )
                     .orElseThrow( () -> new NotFoundException( EventType.LEDGER_TRANSACTION_CREATION_FAILED, ledgerTxnUuid,
-                            "No matching ledger account found for UUID " + entry.getLedgerAccount().getUuid() ) );
+                            "No matching ledger account found for UUID " + entry.getLedgerAccount().getUuid()
+                                    + " and lockVersion " + entry.getLedgerAccount().getLockVersion() ) );
             entry.setLedgerAccount( acct ); // replace with "live" ledger account
             entry.setCreatedDate( OffsetDateTime.now() );
         }
@@ -199,6 +200,7 @@ public class LedgerEventConsumer {
                                                 .ledgerAccount( LedgerAccount.builder()
                                                         .id( entry.getLedgerAccount().getId() )
                                                         .uuid( entry.getLedgerAccount().getUuid() )
+                                                        .lockVersion( entry.getLedgerAccount().getLockVersion() )
                                                         .build() )
                                                 .createdDate( entry.getCreatedDate() )
                                                 .build()

@@ -108,6 +108,7 @@ public class LedgerTransactionControllerTest {
                         LedgerEntryRequest.builder()
                                 .ledgerAccount( LedgerEntryAccount.builder()
                                         .uuid( UUID )
+                                        .lockVersion( 21L )
                                         .build() )
                                 .direction( "debit" )
                                 .amount( new BigInteger( "100" ) )
@@ -115,6 +116,7 @@ public class LedgerTransactionControllerTest {
                         LedgerEntryRequest.builder()
                                 .ledgerAccount( LedgerEntryAccount.builder()
                                         .uuid( UUID )
+                                        .lockVersion( 32L )
                                         .build() )
                                 .direction( "credit" )
                                 .amount( new BigInteger( "100" ) )
@@ -147,6 +149,48 @@ public class LedgerTransactionControllerTest {
         JsonObject dataObj = kafkaPayload.get( "data" ).getAsJsonObject();
         assertThat( dataObj.get( "uuid" ).getAsString(), is( UUID ) );
         assertThat( dataObj.get( "description" ).getAsString(), is( LEDGER_DESCRIPTION ) );
+    }
+
+    @Test
+    public void testCreateLedgerTransactionMissingLockVersions() throws Exception {
+
+        // setup
+        String json = gson.toJson( CreateLedgerTransactionRequest.builder()
+                .uuid( UUID )
+                .description( LEDGER_DESCRIPTION )
+                .ledgerEntries( Arrays.asList(
+                        LedgerEntryRequest.builder()
+                                .ledgerAccount( LedgerEntryAccount.builder()
+                                        .uuid( UUID )
+                                        .build() )
+                                .direction( "debit" )
+                                .amount( new BigInteger( "100" ) )
+                                .build(),
+                        LedgerEntryRequest.builder()
+                                .ledgerAccount( LedgerEntryAccount.builder()
+                                        .uuid( UUID )
+                                        .build() )
+                                .direction( "credit" )
+                                .amount( new BigInteger( "100" ) )
+                                .build() ) )
+                .build() );
+
+        // execute & verify
+        mvc.perform( MockMvcRequestBuilders
+                        .post( "/api/ledger_transaction" )
+                        .content( json )
+                        .contentType( MediaType.APPLICATION_JSON )
+                        .accept( MediaType.APPLICATION_JSON ) )
+                .andDo( print() )
+                .andExpect( status().isBadRequest() )
+                .andExpect( MockMvcResultMatchers.jsonPath( "$.status", is( RequestStatus.failed.name() ) ) )
+                .andExpect( MockMvcResultMatchers.jsonPath( "$.error" ).doesNotExist() )
+                .andExpect( MockMvcResultMatchers.jsonPath( "$.errors" ).exists() )
+                .andExpect( MockMvcResultMatchers.jsonPath( "$.errors.['ledgerEntries[0].ledgerAccount.lockVersion']", is( "must not be null" ) ) )
+                .andExpect( MockMvcResultMatchers.jsonPath( "$.errors.['ledgerEntries[1].ledgerAccount.lockVersion']", is( "must not be null" ) ) );
+
+        verify( ledgerService, never() ).waitForLedgerTransactionCreation( anyString(), anyLong() );
+        verify( kafkaTemplate, never() ).send( anyString(), anyString(), anyString() );
     }
 
     @Test

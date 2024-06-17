@@ -13,20 +13,26 @@ import java.util.List;
 public interface LedgerEntryRepository extends JpaRepository<LedgerEntry, Long> {
 
     @Query( "SELECT " +
-            "SUM(CASE WHEN e.direction = 'credit' THEN e.amount ELSE 0 END) AS total_credits, " +
-            "SUM(CASE WHEN e.direction = 'debit' THEN e.amount ELSE 0 END) AS total_debits " +
+            "e.ledgerAccount.uuid AS ledgerAccountUuid, " +
+            "MAX(e.ledgerAccount.lockVersion) AS ledgerAccountLockVersion, " +
+            "SUM(CASE WHEN e.direction = 'credit' THEN e.amount ELSE 0 END) AS totalCredits, " +
+            "SUM(CASE WHEN e.direction = 'debit' THEN e.amount ELSE 0 END) AS totalDebits " +
             "FROM LedgerEntry e " +
             "WHERE e.ledgerAccount.uuid = :ledgerAccountUuid " +
-            "AND e.createdDate <= :queryDate" )
-    List<Object[]> getBalances( @Param( "ledgerAccountUuid" ) String ledgerAccountId,
+            "AND e.createdDate <= :queryDate " +
+            "GROUP BY e.ledgerAccount.uuid" )
+    List<LedgerAccountBalance> getBalances( @Param( "ledgerAccountUuid" ) String ledgerAccountId,
                                 @Param( "queryDate" ) OffsetDateTime createdDate );
 
     @Query( "SELECT " +
-            "SUM(CASE WHEN e.direction = 'credit' THEN e.amount ELSE 0 END) AS total_credits, " +
-            "SUM(CASE WHEN e.direction = 'debit' THEN e.amount ELSE 0 END) AS total_debits " +
+            "e.ledgerAccount.uuid AS ledgerAccountUuid, " +
+            "MAX(e.ledgerAccount.lockVersion) AS ledgerAccountLockVersion, " +
+            "SUM(CASE WHEN e.direction = 'credit' THEN e.amount ELSE 0 END) AS totalCredits, " +
+            "SUM(CASE WHEN e.direction = 'debit' THEN e.amount ELSE 0 END) AS totalDebits " +
             "FROM LedgerEntry e " +
-            "WHERE e.ledgerAccount.uuid = :ledgerAccountUuid" )
-    List<Object[]> getBalances( @Param( "ledgerAccountUuid" ) String ledgerAccountId );
+            "WHERE e.ledgerAccount.uuid = :ledgerAccountUuid " +
+            "GROUP BY e.ledgerAccount.uuid" )
+    List<LedgerAccountBalance> getBalances( @Param( "ledgerAccountUuid" ) String ledgerAccountId );
 
 }
 

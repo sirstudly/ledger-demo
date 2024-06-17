@@ -7,6 +7,7 @@ import demo.ledger.api.model.dto.CreateLedgerResponse;
 import demo.ledger.api.model.dto.CreateLedgerTransactionResponse;
 import demo.ledger.api.model.dto.GetBalanceResponse;
 import demo.ledger.api.model.dto.RequestStatus;
+import demo.ledger.api.repository.LedgerAccountBalance;
 import demo.ledger.api.repository.LedgerAccountRepository;
 import demo.ledger.api.repository.LedgerEntryRepository;
 import demo.ledger.api.repository.LedgerRepository;
@@ -248,16 +249,17 @@ public class LedgerService {
 
         LedgerAccount ledgerAccount = findLedgerAccountByUuid( uuid )
                 .orElseThrow( () -> new NotFoundException( "No matching ledger account found" ) );
-        List<Object[]> results = untilDateTime == null ?
+        List<LedgerAccountBalance> results = untilDateTime == null ?
                 ledgerEntryRepository.getBalances( uuid ) : ledgerEntryRepository.getBalances( uuid, untilDateTime );
 
-        Object[] result = results.get( 0 );
+        LedgerAccountBalance result = results.get( 0 );
         return GetBalanceResponse.builder()
                 .uuid( uuid )
+                .lockVersion( result.getLedgerAccountLockVersion() )
                 .name( ledgerAccount.getName() )
                 .description( ledgerAccount.getDescription() )
-                .totalCredits( (BigInteger) result[0] )
-                .totalDebits( (BigInteger) result[1] )
+                .totalCredits( result.getTotalCredits() )
+                .totalDebits( result.getTotalDebits() )
                 .timestamp( untilDateTime )
                 .build();
     }

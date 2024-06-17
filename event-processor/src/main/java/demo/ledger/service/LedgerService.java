@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Example;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -60,6 +61,7 @@ public class LedgerService {
                 .name( name )
                 .description( description )
                 .currency( currency )
+                .lockVersion( 1L )
                 .createdDate( OffsetDateTime.now() )
                 .lastUpdatedDate( OffsetDateTime.now() )
                 .build() );
@@ -71,6 +73,14 @@ public class LedgerService {
         return ledgerAccountRepository.findOne( Example.of( LedgerAccount.builder().uuid( uuid ).build() ) );
     }
 
+    public Optional<LedgerAccount> getLedgerAccount( String uuid, Long lockVersion ) {
+        return ledgerAccountRepository.findOne( Example.of( LedgerAccount.builder()
+                .uuid( uuid )
+                .lockVersion( lockVersion )
+                .build() ) );
+    }
+
+    @Transactional
     public LedgerTransaction createLedgerTransaction( String uuid, String description, List<LedgerEntry> ledgerEntries ) {
         LOGGER.info( "Creating ledger transaction: uuid={}, description={}", uuid, description );
 
@@ -83,6 +93,10 @@ public class LedgerService {
                 .ledgerEntries( savedLedgerEntries )
                 .createdDate( OffsetDateTime.now() )
                 .build() );
+
+        // now increment the lock version of both ledger accounts
+        ledgerAccountRepository.saveAll( ledgerEntries.stream().map( entry -> entry.getLedgerAccount().incrementLockVersion() ).toList() );
+
         LOGGER.info( "Created ledger transaction: id={}", obj.getId() );
         return obj;
     }

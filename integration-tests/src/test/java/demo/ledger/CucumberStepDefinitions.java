@@ -1,6 +1,5 @@
 package demo.ledger;
 
-import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
@@ -53,7 +52,7 @@ public class CucumberStepDefinitions {
                 .createNewLedgerAccount( UUID.randomUUID().toString(), accountName + "'s first account" )
                 .statusCodeIs( 202 )
                 .responseStatusIs( "completed" )
-                .saveLedgerAccountUuidKeyedByName( accountName );
+                .saveLedgerAccountKeyedByName( accountName );
     }
 
     @When( "I submit a POST request to create a new ledger account with the previous UUID" )
@@ -81,6 +80,11 @@ public class CucumberStepDefinitions {
         getState().fieldNonZeroInteger( parentField, fieldName );
     }
 
+    @Then( "the {string} {word} field is equal to {int}" )
+    public void fieldEquals( String fieldName, String parentField, int value ) {
+        getState().fieldEqualTo( parentField, fieldName, value );
+    }
+
     @When( "I submit a GET request to retrieve the ledger by its UUID" )
     public void queryLedgerByUUID() throws Exception {
         getState().queryLedgerByUUID();
@@ -99,6 +103,11 @@ public class CucumberStepDefinitions {
     @Then( "the {string} field is a non-zero integer" )
     public void fieldNonZeroInteger( String fieldName ) {
         getState().fieldNonZeroInteger( fieldName );
+    }
+
+    @Then( "the {string} field is {int}" )
+    public void fieldMatchesValue( String fieldName, int value ) {
+        getState().fieldMatches( fieldName, value );
     }
 
     @Then( "the {string} field is {string}" )
@@ -126,14 +135,14 @@ public class CucumberStepDefinitions {
         );
     }
 
-    @Then( "there exists a \\(transaction) ledger entry {word}ing {word} for ${int}" )
-    public void transactionLedgerEntryExists( String direction, String accountName, int amount ) {
-        getState().transactionLedgerEntryExists( direction, accountName, amount );
+    @Then( "there exists a \\(transaction) ledger entry {word}ing {word} for ${int} with an account lock version of {int}" )
+    public void transactionLedgerEntryExists( String direction, String accountName, int amount, int lockVersion ) {
+        getState().transactionLedgerEntryExists( direction, accountName, amount, lockVersion );
     }
 
-    @Then( "there exists a ledger entry {word}ing {word} for ${int}" )
-    public void ledgerEntryExists( String direction, String accountName, int amount ) {
-        getState().ledgerEntryExists( direction, accountName, amount );
+    @Then( "there exists a ledger entry {word}ing {word} for ${int} with an account lock version of {int}" )
+    public void ledgerEntryExists( String direction, String accountName, int amount, int lockVersion ) {
+        getState().ledgerEntryExists( direction, accountName, amount, lockVersion );
     }
 
     @When( "I submit a GET request to retrieve the ledger transaction by its UUID" )

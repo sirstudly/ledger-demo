@@ -44,6 +44,7 @@ public class GetBalanceControllerTest {
     private ArgumentCaptor<String> stringCaptor;
 
     private static final String UUID = "a1d968c1-86fc-4864-a146-f7f8e601fa3f";
+    private static final Long LOCK_VERSION = 55L;
     private static final String ACCOUNT_NAME = "My first ledger";
     private static final String ACCOUNT_DESCRIPTION = "Some dodgy transactions";
     private static final String QUERY_DATE = "2024-04-11T10:24:35+02:00";
@@ -54,6 +55,7 @@ public class GetBalanceControllerTest {
     public void setup() throws Exception {
         when( ledgerService.fetchLedgerAccountBalance( stringCaptor.capture(), dateTimeCaptor.capture() ) ).thenReturn( response );
         when( response.getUuid() ).thenReturn( UUID );
+        when( response.getLockVersion() ).thenReturn( LOCK_VERSION );
         when( response.getName() ).thenReturn( ACCOUNT_NAME );
         when( response.getDescription() ).thenReturn( ACCOUNT_DESCRIPTION );
         when( response.getTotalCredits() ).thenReturn( TOTAL_CREDITS );
@@ -71,6 +73,7 @@ public class GetBalanceControllerTest {
                         .accept( MediaType.APPLICATION_JSON ) )
                 .andExpect( status().isOk() )
                 .andExpect( MockMvcResultMatchers.jsonPath( "$.uuid", is( UUID ) ) )
+                .andExpect( MockMvcResultMatchers.jsonPath( "$.lockVersion", is( LOCK_VERSION ), Long.class ) )
                 .andExpect( MockMvcResultMatchers.jsonPath( "$.name", is( ACCOUNT_NAME ) ) )
                 .andExpect( MockMvcResultMatchers.jsonPath( "$.description", is( ACCOUNT_DESCRIPTION ) ) )
                 .andExpect( MockMvcResultMatchers.jsonPath( "$.timestamp", is( QUERY_DATE ) ) );
@@ -87,6 +90,7 @@ public class GetBalanceControllerTest {
                         .accept( MediaType.APPLICATION_JSON ) )
                 .andExpect( status().isOk() )
                 .andExpect( MockMvcResultMatchers.jsonPath( "$.uuid", is( UUID ) ) )
+                .andExpect( MockMvcResultMatchers.jsonPath( "$.lockVersion", is( LOCK_VERSION ), Long.class ) )
                 .andExpect( MockMvcResultMatchers.jsonPath( "$.name", is( ACCOUNT_NAME ) ) )
                 .andExpect( MockMvcResultMatchers.jsonPath( "$.description", is( ACCOUNT_DESCRIPTION ) ) );
         assertThat( stringCaptor.getValue(), is( UUID ) );

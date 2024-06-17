@@ -38,11 +38,10 @@ public class CucumberTestState {
     private HttpResponse<String> response;
     private String ledgerUuid;
     private String ledgerAccountUuid;
-    private String ledgerTransactionUuid;
 
     // the following are maps keyed by account (name)
     private final Map<String, String> ledgerUuidMap = new HashMap<>();
-    private final Map<String, String> ledgerAccountUuidMap = new HashMap<>();
+    private final Map<String, JsonObject> ledgerAccountMap = new HashMap<>();
     private final Map<String, HttpResponse<String>> getBalanceResponseMap = new HashMap<>();
     private final Map<String, BigInteger> debitTotalMap = new HashMap<>();
     private final Map<String, BigInteger> creditTotalMap = new HashMap<>();
@@ -108,35 +107,35 @@ public class CucumberTestState {
     /**
      * Creates a new ledger transaction and submits it to the REST server.
      *
-     * @param uuid              unique ID for this transaction
-     * @param description       description of this transaction
-     * @param debitAmount       amount being debited in base units
-     * @param creditAmount      amount being credited in base units
-     * @param fromLedgerAccount the account we are debiting from
-     * @param toLedgerAccount   the account we are crediting to
+     * @param uuid                  unique ID for this transaction
+     * @param description           description of this transaction
+     * @param debitAmount           amount being debited in base units
+     * @param creditAmount          amount being credited in base units
+     * @param fromLedgerAccountName the account we are debiting from
+     * @param toLedgerAccountName   the account we are crediting to
      * @return this object
-     * @throws Exception
+     * @throws Exception on network error
      */
     public CucumberTestState createNewLedgerTransaction( String uuid, String description, BigInteger debitAmount, BigInteger creditAmount,
-                                                         String fromLedgerAccount, String toLedgerAccount ) throws Exception {
+                                                         String fromLedgerAccountName, String toLedgerAccountName ) throws Exception {
 
-        String fromLedgerUuid = getLedgerUuid( fromLedgerAccount );
-        String toLedgerUuid = getLedgerUuid( toLedgerAccount );
+        String fromLedgerUuid = getLedgerUuid( fromLedgerAccountName );
+        String toLedgerUuid = getLedgerUuid( toLedgerAccountName );
         assertThat( fromLedgerUuid ).isNotNull();
         assertThat( toLedgerUuid ).isNotNull();
 
-        String fromLedgerAccountUuid = getLedgerAccountUuid( fromLedgerAccount );
-        String toLedgerAccountUuid = getLedgerAccountUuid( toLedgerAccount );
-        assertThat( fromLedgerAccountUuid ).isNotNull();
-        assertThat( toLedgerAccountUuid ).isNotNull();
+        JsonObject fromLedgerAccount = getLedgerAccount( fromLedgerAccountName );
+        JsonObject toLedgerAccount = getLedgerAccount( toLedgerAccountName );
+        assertThat( fromLedgerAccount ).isNotNull();
+        assertThat( toLedgerAccount ).isNotNull();
 
         // build up our transaction object
         request = new JsonObject();
         request.addProperty( "uuid", uuid );
         request.addProperty( "description", description );
         JsonArray ledgerEntries = new JsonArray();
-        ledgerEntries.add( ledgerEntry( fromLedgerAccountUuid, "debit", debitAmount ) );
-        ledgerEntries.add( ledgerEntry( toLedgerAccountUuid, "credit", creditAmount ) );
+        ledgerEntries.add( ledgerEntry( fromLedgerAccount, "debit", debitAmount ) );
+        ledgerEntries.add( ledgerEntry( toLedgerAccount, "credit", creditAmount ) );
         request.add( "ledgerEntries", ledgerEntries );
         LOGGER.info( "request={}", gson.toJson( request ) );
 
@@ -149,8 +148,19 @@ public class CucumberTestState {
         response = httpClient.send( httpReq, HttpResponse.BodyHandlers.ofString() );
         LOGGER.info( "response={}", response.body() );
 
-        // save this for later...
-        ledgerTransactionUuid = request.get( "uuid" ).getAsString();
+        // update the account lock version from the response in our (account) cached map
+        JsonObject resp = gson.fromJson( response.body(), JsonObject.class );
+        resp.get( "ledgerTransaction" ).getAsJsonObject().get( "ledgerEntries" ).getAsJsonArray().asList().stream().forEach( e -> {
+            final int lockVersion = e.getAsJsonObject().get( "ledgerAccount" ).getAsJsonObject().get( "lockVersion" ).getAsInt();
+            if ( e.getAsJsonObject().get( "ledgerAccount" ).getAsJsonObject().get( "uuid" ).getAsString().equals( fromLedgerAccount.get( "uuid" ).getAsString() ) ) {
+                LOGGER.info( "Updating ledger account for " + fromLedgerAccountName + " to " + lockVersion );
+                fromLedgerAccount.addProperty( "lockVersion", lockVersion );
+            }
+            else if ( e.getAsJsonObject().get( "ledgerAccount" ).getAsJsonObject().get( "uuid" ).getAsString().equals( toLedgerAccount.get( "uuid" ).getAsString() ) ) {
+                LOGGER.info( "Updating ledger account for " + toLedgerAccountName + " to " + lockVersion );
+                toLedgerAccount.addProperty( "lockVersion", lockVersion );
+            }
+        } );
 
         return this;
     }
@@ -161,11 +171,12 @@ public class CucumberTestState {
      * @param direction   either credit or debit
      * @param accountName the name of the account to lookup the UUID for
      * @param amount      the amount to debit/credit
+     * @param lockVersion lock version on account
      * @return this object
      */
-    public CucumberTestState transactionLedgerEntryExists( String direction, String accountName, int amount ) {
+    public CucumberTestState transactionLedgerEntryExists( String direction, String accountName, int amount, int lockVersion ) {
         JsonObject resp = gson.fromJson( response.body(), JsonObject.class );
-        return ledgerEntryExists( resp.get( "ledgerTransaction" ).getAsJsonObject(), direction, accountName, amount );
+        return ledgerEntryExists( resp.get( "ledgerTransaction" ).getAsJsonObject(), direction, accountName, amount, lockVersion );
     }
 
     /**
@@ -174,23 +185,25 @@ public class CucumberTestState {
      * @param direction   either credit or debit
      * @param accountName the name of the account to lookup the UUID for
      * @param amount      the amount to debit/credit
+     * @param lockVersion the lock version on the ledger account
      * @return this object
      */
-    public CucumberTestState ledgerEntryExists( String direction, String accountName, int amount ) {
+    public CucumberTestState ledgerEntryExists( String direction, String accountName, int amount, int lockVersion ) {
         JsonObject resp = gson.fromJson( response.body(), JsonObject.class );
-        return ledgerEntryExists( resp.getAsJsonObject(), direction, accountName, amount );
+        return ledgerEntryExists( resp.getAsJsonObject(), direction, accountName, amount, lockVersion );
     }
 
-    private CucumberTestState ledgerEntryExists( JsonObject resp, String direction, String accountName, int amount ) {
-        String accountUuid = getLedgerAccountUuid( accountName );
+    private CucumberTestState ledgerEntryExists( JsonObject resp, String direction, String accountName, int amount, int lockVersion ) {
+        JsonObject ledgerAccount = getLedgerAccount( accountName );
+        assertThat( ledgerAccount ).isNotNull();
         JsonElement matchedEntry = resp.get( "ledgerEntries" ).getAsJsonArray().asList().stream().filter(
-                        e -> accountUuid.equals( e.getAsJsonObject()
-                                .get( "ledgerAccount" ).getAsJsonObject()
-                                .get( "uuid" ).getAsString() ) ).findAny()
+                        e -> ledgerAccount.get( "uuid" ).getAsString().equals(
+                                e.getAsJsonObject().get( "ledgerAccount" ).getAsJsonObject().get( "uuid" ).getAsString() ) ).findAny()
                 .orElseThrow( () -> new AssertionError( "Missing ledger entry for account " + accountName ) );
         assertThat( matchedEntry.getAsJsonObject().get( "amount" ).getAsInt() ).isEqualTo( amount );
         assertThat( matchedEntry.getAsJsonObject().get( "direction" ).getAsString() ).isEqualTo( direction );
         assertThat( matchedEntry.getAsJsonObject().get( "id" ).getAsBigInteger() ).isPositive();
+        assertThat( matchedEntry.getAsJsonObject().get( "ledgerAccount" ).getAsJsonObject().get( "lockVersion" ).getAsLong() ).isEqualTo( lockVersion );
         return this;
     }
 
@@ -216,6 +229,13 @@ public class CucumberTestState {
         JsonObject resp = gson.fromJson( response.body(), JsonObject.class );
         JsonObject ledger = resp.get( parentField ).getAsJsonObject();
         assertThat( ledger.get( fieldName ).getAsBigInteger() ).isPositive();
+        return this;
+    }
+
+    public CucumberTestState fieldEqualTo( String parentField, String fieldName, int value ) {
+        JsonObject resp = gson.fromJson( response.body(), JsonObject.class );
+        JsonObject ledger = resp.get( parentField ).getAsJsonObject();
+        assertThat( ledger.get( fieldName ).getAsInt() ).isEqualTo( value );
         return this;
     }
 
@@ -261,6 +281,12 @@ public class CucumberTestState {
         return this;
     }
 
+    public CucumberTestState fieldMatches( String fieldName, int value ) {
+        JsonObject resp = gson.fromJson( response.body(), JsonObject.class );
+        assertThat( resp.get( fieldName ).getAsInt() ).isEqualTo( value );
+        return this;
+    }
+
     public CucumberTestState fieldMatches( String fieldName, String value ) {
         JsonObject resp = gson.fromJson( response.body(), JsonObject.class );
         assertThat( resp.get( fieldName ).getAsString() ).isEqualTo( value );
@@ -272,8 +298,8 @@ public class CucumberTestState {
         return this;
     }
 
-    public CucumberTestState saveLedgerAccountUuidKeyedByName( String name ) {
-        ledgerAccountUuidMap.put( name, ledgerAccountUuid );
+    public CucumberTestState saveLedgerAccountKeyedByName( String name ) {
+        ledgerAccountMap.put( name, ledgerAccount( ledgerAccountUuid, 1L ) );
         return this;
     }
 
@@ -317,7 +343,7 @@ public class CucumberTestState {
     public CucumberTestState submitBalanceRequest( String accountName ) throws Exception {
 
         HttpRequest httpReq = HttpRequest.newBuilder()
-                .uri( URI.create( getBalanceUrl + "?uuid=" + getLedgerAccountUuid( accountName ) ) )
+                .uri( URI.create( getBalanceUrl + "?uuid=" + getLedgerAccount( accountName ).get( "uuid" ).getAsString() ) )
                 .GET()
                 .build();
 
@@ -388,8 +414,8 @@ public class CucumberTestState {
         return ledgerUuidMap.get( key );
     }
 
-    public String getLedgerAccountUuid( String key ) {
-        return ledgerAccountUuidMap.get( key );
+    public JsonObject getLedgerAccount( String key ) {
+        return ledgerAccountMap.get( key );
     }
 
     private JsonObject uuidLookup( String uuid ) {
@@ -398,9 +424,16 @@ public class CucumberTestState {
         return uuidLookup;
     }
 
-    private JsonObject ledgerEntry( String ledgerAccountUuid, String direction, BigInteger amount ) {
+    private JsonObject ledgerAccount( String uuid, long lockVersion ) {
+        JsonObject obj = new JsonObject();
+        obj.addProperty( "uuid", uuid );
+        obj.addProperty( "lockVersion", lockVersion );
+        return obj;
+    }
+
+    private JsonObject ledgerEntry( JsonObject ledgerAccount, String direction, BigInteger amount ) {
         JsonObject entry = new JsonObject();
-        entry.add( "ledgerAccount", uuidLookup( ledgerAccountUuid ) );
+        entry.add( "ledgerAccount", ledgerAccount );
         entry.addProperty( "direction", direction );
         entry.addProperty( "amount", amount );
         return entry;

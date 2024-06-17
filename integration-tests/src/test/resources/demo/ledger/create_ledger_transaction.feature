@@ -11,8 +11,8 @@ Feature: Creating two different ledger accounts and record a transfer between th
     And the status is 'completed'
     And the 'uuid' ledgerTransaction field matches that in the request
     And the 'description' ledgerTransaction field matches that in the request
-    And there exists a (transaction) ledger entry debiting Audrey for $25
-    And there exists a (transaction) ledger entry crediting Bronson for $25
+    And there exists a (transaction) ledger entry debiting Audrey for $25 with an account lock version of 2
+    And there exists a (transaction) ledger entry crediting Bronson for $25 with an account lock version of 2
     # id represents the primary key in the ledger transaction table
     And the 'id' ledgerTransaction field is a non-zero integer
 
@@ -21,5 +21,5 @@ Feature: Creating two different ledger accounts and record a transfer between th
     And the 'uuid' field matches that in the request
     And the 'description' field matches that in the request
     And the 'id' field is a non-zero integer
-    And there exists a ledger entry debiting Audrey for $25
-    And there exists a ledger entry crediting Bronson for $25
+    And there exists a ledger entry debiting Audrey for $25 with an account lock version of 2
+    And there exists a ledger entry crediting Bronson for $25 with an account lock version of 2

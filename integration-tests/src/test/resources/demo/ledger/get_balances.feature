@@ -13,9 +13,13 @@ Feature: Submitting balance requests returns the correct sum of credits and debi
     And I submit 20 random transactions between Abbey and Charlie
     When I submit a balance request for Abbey's account
     Then the status code is 200
+    # each account takes part in 20 x 2 transactions (starting with a lock version of 1) = 41
+    And the 'lockVersion' field is 41
     When I submit a balance request for Ben's account
     Then the status code is 200
+    And the 'lockVersion' field is 41
     When I submit a balance request for Charlie's account
     Then the status code is 200
+    And the 'lockVersion' field is 41
     And the debit and credit totals for all the balance requests sum to the same amount as all the random transactions
     And the total amount of all credits equals the total amount of all debits

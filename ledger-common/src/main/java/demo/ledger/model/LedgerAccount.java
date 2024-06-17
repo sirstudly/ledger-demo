@@ -29,6 +29,9 @@ public class LedgerAccount {
     @GeneratedValue
     private Long id;
 
+    @Column( name = "lock_version", nullable = false )
+    private Long lockVersion;
+
     @Column( name = "uuid", nullable = false, unique = true )
     private String uuid;
 
@@ -51,4 +54,8 @@ public class LedgerAccount {
     @Column( name = "last_updated_date", columnDefinition = "TIMESTAMP WITH TIME ZONE" )
     private OffsetDateTime lastUpdatedDate;
 
+    public LedgerAccount incrementLockVersion() {
+        setLockVersion( getLockVersion() + 1L );
+        return this;
+    }
 }

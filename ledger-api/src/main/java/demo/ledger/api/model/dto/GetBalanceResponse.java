@@ -15,6 +15,7 @@ import java.time.OffsetDateTime;
 public class GetBalanceResponse extends RestResponse {
 
     private String uuid;
+    private Long lockVersion;
     private String name;
     private String description;
     private BigInteger totalDebits;

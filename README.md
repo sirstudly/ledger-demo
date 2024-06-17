@@ -68,11 +68,10 @@ After all, it's the child collection of ledger entries we want to version as par
 ## Sample Requests/Responses
 
 The Swagger UI is temporarily deployed on https://7738-31-94-68-63.ngrok-free.app/swagger-ui/index.html
-<br>However it currently doesn't support the "Try it out" feature due to a CORS error.
 
 Here are some sample requests to get you started:
 
-**Create Ledger:** `http://<host>:<port>/api/ledger`
+**Create Ledger (POST):** https://7738-31-94-68-63.ngrok-free.app/api/ledger
 
 Request:
 ```json
@@ -98,7 +97,7 @@ Response:
 }
 ```
 
-**Get Ledger:** `http://<host>:<port>/api/ledger/a42f714c-ce90-4a9c-a06e-9a1b8842dfbd`
+**Get Ledger (GET):** https://7738-31-94-68-63.ngrok-free.app/api/ledger/a42f714c-ce90-4a9c-a06e-9a1b8842dfbd
 
 Response:
 ```json
@@ -112,7 +111,7 @@ Response:
 }
 ```
 
-**Create Ledger Account:** `http://<host>:<port>/api/ledger_account`
+**Create Ledger Account (POST):** https://7738-31-94-68-63.ngrok-free.app/api/ledger_account
 
 Request:
 ```json
@@ -152,7 +151,7 @@ Response:
 }
 ```
 
-**Get Ledger Account:** `http://<host>:<port>/api/ledger_account/a42f714c-ce90-4a9c-a06e-9a1b8842dfac`
+**Get Ledger Account (GET):** https://7738-31-94-68-63.ngrok-free.app/api/ledger_account/a42f714c-ce90-4a9c-a06e-9a1b8842dfac
 
 Response:
 ```json
@@ -176,7 +175,7 @@ Response:
 }
 ```
 
-**Create Ledger Transaction:** `http://<host>:<port>/api/ledger_transaction`
+**Create Ledger Transaction (POST):** https://7738-31-94-68-63.ngrok-free.app/api/ledger_transaction
 
 Request:
 ```json
@@ -241,12 +240,12 @@ Response:
 }
 ```
 
-**Get Ledger Balance (by account UUID):** `http://<host>:<port>/api/get_balance?uuid=a42f714c-ce90-4a9c-a06e-9a1b8842dfac&timestamp=2024-06-22T03:38:41.532%2B00:00`
+**Get Ledger Balance (by account UUID):** https://7738-31-94-68-63.ngrok-free.app/api/get_balance?uuid=a42f714c-ce90-4a9c-a06e-9a1b8842dfab&timestamp=2024-07-22T03:38:41.532%2B00:00
 
 Response:
 ```json
 {
-    "uuid": "316df247-cf38-4695-9f80-c63f6c72f678",
+    "uuid": "a42f714c-ce90-4a9c-a06e-9a1b8842dfab",
     "lockVersion": 2,
     "name": "My First Ledger Account",
     "description": "This is used to hold account transactions",

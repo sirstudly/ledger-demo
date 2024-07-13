@@ -67,11 +67,11 @@ After all, it's the child collection of ledger entries we want to version as par
 
 ## Sample Requests/Responses
 
-The Swagger UI is temporarily deployed on https://af7d-31-94-12-219.ngrok-free.app/swagger-ui/index.html
+The Swagger UI is temporarily deployed on https://af17-31-94-22-222.ngrok-free.app/swagger-ui/index.html
 
 Here are some sample requests to get you started:
 
-**Create Ledger (POST):** https://af7d-31-94-12-219.ngrok-free.app/api/ledger
+**Create Ledger (POST):** https://af17-31-94-22-222.ngrok-free.app/api/ledger
 
 Request:
 ```json
@@ -97,7 +97,7 @@ Response:
 }
 ```
 
-**Get Ledger (GET):** https://af7d-31-94-12-219.ngrok-free.app/api/ledger/a42f714c-ce90-4a9c-a06e-9a1b8842dfbd
+**Get Ledger (GET):** https://af17-31-94-22-222.ngrok-free.app/api/ledger/a42f714c-ce90-4a9c-a06e-9a1b8842dfbd
 
 Response:
 ```json
@@ -111,7 +111,7 @@ Response:
 }
 ```
 
-**Create Ledger Account (POST):** https://af7d-31-94-12-219.ngrok-free.app/api/ledger_account
+**Create Ledger Account (POST):** https://af17-31-94-22-222.ngrok-free.app/api/ledger_account
 
 Request:
 ```json
@@ -151,7 +151,7 @@ Response:
 }
 ```
 
-**Get Ledger Account (GET):** https://af7d-31-94-12-219.ngrok-free.app/api/ledger_account/a42f714c-ce90-4a9c-a06e-9a1b8842dfac
+**Get Ledger Account (GET):** https://af17-31-94-22-222.ngrok-free.app/api/ledger_account/a42f714c-ce90-4a9c-a06e-9a1b8842dfac
 
 Response:
 ```json
@@ -175,7 +175,7 @@ Response:
 }
 ```
 
-**Create Ledger Transaction (POST):** https://af7d-31-94-12-219.ngrok-free.app/api/ledger_transaction
+**Create Ledger Transaction (POST):** https://af17-31-94-22-222.ngrok-free.app/api/ledger_transaction
 
 Request:
 ```json
@@ -240,7 +240,7 @@ Response:
 }
 ```
 
-**Get Ledger Balance (by account UUID):** https://af7d-31-94-12-219.ngrok-free.app/api/get_balance?uuid=a42f714c-ce90-4a9c-a06e-9a1b8842dfab&timestamp=2024-07-22T03:38:41.532%2B00:00
+**Get Ledger Balance (by account UUID):** https://af17-31-94-22-222.ngrok-free.app/api/get_balance?uuid=a42f714c-ce90-4a9c-a06e-9a1b8842dfab&timestamp=2024-07-22T03:38:41.532%2B00:00
 
 Response:
 ```json
